@@ -30,7 +30,7 @@ export function PlayControl({
       className={`play${variant === "md" ? "" : ` play--${variant}`}`}
       aria-disabled={disabled || undefined}
       aria-label={
-        disabled ? `${title} — ${dict.noAudio}` : `${isPlaying ? dict.pause : dict.play} ${title}`
+        disabled ? `${title}. ${dict.noAudio}` : `${isPlaying ? dict.pause : dict.play} ${title}`
       }
       title={disabled ? dict.noAudio : undefined}
       onClick={() => !disabled && playSong(song)}

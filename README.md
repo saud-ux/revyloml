@@ -53,6 +53,7 @@ locally, copy `.env.example` to `.env.local` and fill in `DATABASE_URL`,
 | `/ar/admin/songs/new` | upload a song |
 | `/ar/admin/profile` | photo, bilingual name and bio, accent colour |
 | `/media/<file>` | uploaded audio and artwork, with HTTP Range support |
+| `/api/plays` | records that a song started; called by the player |
 
 Every public URL carries its locale, so a link shared in Arabic opens in Arabic
 on someone else's phone. `middleware.ts` handles the redirect.
@@ -66,7 +67,9 @@ four function bodies and nothing else.
 
 Two rules that live in the data layer and must survive that swap:
 
-- `listPublicSongs()` excludes hidden songs.
+- `listPublicSongs()` excludes hidden songs, and takes the order: the sequence
+  Yazan dragged them into (the default, because it is the one he controls) or
+  newest first, which a visitor can pick from the page.
 - `getSong()` returns them anyway — that is what "hidden" means here: off the
   list, reachable by direct link. The song page also marks hidden songs
   `noindex` so they never turn up in search.
@@ -99,6 +102,11 @@ Set **one** of these:
 The plain variable is weaker only against someone who can already read the
 deployment's environment — and they can read `DATABASE_URL` too, so the
 practical gap is small.
+
+The login form allows 8 attempts per 15 minutes per address, and a success
+clears the count so normal use never trips it. It is keyed on the forwarded
+address, which can be spoofed: it slows a guesser down, it does not stop a
+determined one.
 
 The admin layout redirects unauthenticated visitors, **and every server action
 re-checks the session independently** — a server action is its own HTTP
@@ -164,13 +172,34 @@ player) reads and writes that one piece of state.
 - Directional icons (back, previous, next) carry `.flip`. Play, pause, share and
   upload never mirror.
 
+## Link previews
+
+Sharing a song or the page produces a card with artwork, rendered by
+`opengraph-image.tsx` in each route.
+
+**Those images carry no Arabic text, on purpose.** The renderer behind
+`next/og` has no bidi and no Arabic shaping: it places glyphs left to right, so
+an Arabic title comes back with its letters reversed. This was measured, not
+assumed. Every platform that scrapes a link renders `og:title` and
+`og:description` itself, with correct text layout, right beside the image, so
+the title still appears in the preview. A single letter has no ordering to get
+wrong, which is why the generated fallback tile is safe, and handles are
+constrained to Latin characters.
+
+The image URL has to be absolute, so the server needs to know its own address.
+Render sets `RENDER_EXTERNAL_URL` by itself; set `SITE_URL` to override it for a
+custom domain.
+
+## Play counts
+
+The player posts to `/api/plays` when a track actually starts, not when a page
+loads and not on every unpause. Counts are deliberately conservative: a song
+started twice in one session counts once. They appear in the admin list only.
+
 ## Not built yet
 
-- A generated Open Graph image for song links: previews currently carry the
-  title and date as text, with no artwork.
-- Rate limiting on the login form. One password, no lockout — fine behind an
-  obscure URL, worth adding if the link ever gets around.
 - `HomeSkeleton` is written but not wired as `loading.tsx`; see the note in that
   file for why that has to wait until data moves behind the network.
 - Audio duration is read in the browser at upload time. A file the browser
   cannot decode is stored with a duration of 0.
+- Login rate limiting is per instance and in memory, so a restart clears it.

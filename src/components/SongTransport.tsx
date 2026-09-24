@@ -9,13 +9,19 @@ import type { Song } from "@/lib/types";
 
 /** The full player on a song page. Drives the same audio as the mini player. */
 export function SongTransport({ song, dict, title }: { song: Song; dict: Dict; title: string }) {
-  const { next, prev } = usePlayer();
+  const { next, prev, shuffled, toggleShuffle } = usePlayer();
 
   return (
     <>
       <SeekBar large label={dict.play} song={song} />
       <div className="transport">
-        <button type="button" className="iconbtn iconbtn--quiet" aria-label={dict.shuffle}>
+        <button
+          type="button"
+          className={`iconbtn${shuffled ? " iconbtn--on" : " iconbtn--quiet"}`}
+          onClick={toggleShuffle}
+          aria-pressed={shuffled}
+          aria-label={dict.shuffle}
+        >
           <ShuffleIcon size={19} />
         </button>
         <button type="button" className="iconbtn iconbtn--strong" onClick={prev} aria-label={dict.prev}>

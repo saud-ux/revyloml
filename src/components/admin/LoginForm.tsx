@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { signIn } from "@/app/actions";
-import type { Dict, Locale } from "@/lib/i18n";
+import { fill, type Dict, type Locale } from "@/lib/i18n";
 
 export function LoginForm({ locale, dict }: { locale: Locale; dict: Dict }) {
   const [state, action, pending] = useActionState(signIn, undefined);
@@ -24,7 +24,11 @@ export function LoginForm({ locale, dict }: { locale: Locale; dict: Dict }) {
       </label>
       {state?.error && (
         <p id="login-error" className="field__error" role="alert">
-          {state.error === "wrong" ? dict.wrongPassword : state.error}
+          {state.error === "wrong"
+            ? dict.wrongPassword
+            : state.error === "rate"
+              ? fill(dict.tooManyTries, { n: Math.ceil((state.retryAfterSeconds ?? 0) / 60) })
+              : state.error}
         </p>
       )}
       <button type="submit" className="btn btn--primary btn--block" disabled={pending}>

@@ -15,7 +15,7 @@ import { hasDatabase, query, transaction } from "./db";
 type Row = {
   slug: string; title_ar: string; title_en: string; released_at: Date | string;
   duration: number; audio_url: string | null; cover_url: string | null;
-  lyrics: string; visibility: Visibility; pinned: boolean; position: number;
+  lyrics: string; visibility: Visibility; pinned: boolean; position: number; plays: number;
 };
 
 const toSong = (r: Row): Song => ({
@@ -29,6 +29,7 @@ const toSong = (r: Row): Song => ({
   visibility: r.visibility,
   pinned: r.pinned,
   position: r.position,
+  plays: r.plays ?? 0,
 });
 
 const seedSongs = songsSeed as Song[];
@@ -36,15 +37,31 @@ const seedProfile = profileSeed as Profile;
 const byPosition = (a: Song, b: Song) => a.position - b.position;
 
 const COLUMNS = `slug, title_ar, title_en, released_at, duration, audio_url,
-                 cover_url, lyrics, visibility, pinned, position`;
+                 cover_url, lyrics, visibility, pinned, position, plays`;
 const SELECT = `SELECT ${COLUMNS} FROM songs`;
 
 // ---------------------------------------------------------------- reads
 
 /** Songs listed on the public page. Hidden songs are deliberately excluded. */
-export async function listPublicSongs(): Promise<Song[]> {
-  if (!hasDatabase()) return seedSongs.filter((s) => s.visibility === "public").sort(byPosition);
-  const rows = await query<Row>(`${SELECT} WHERE visibility = 'public' ORDER BY position, created_at DESC`);
+export type SongOrder = "custom" | "newest";
+
+/**
+ * Songs listed on the public page. Hidden songs are deliberately excluded.
+ *
+ * "custom" is the order Yazan dragged them into and is the default, because it
+ * is the one he controls. "newest" is the visitor's own override.
+ */
+export async function listPublicSongs(order: SongOrder = "custom"): Promise<Song[]> {
+  const by = order === "newest"
+    ? "released_at DESC, position"
+    : "position, created_at DESC";
+  if (!hasDatabase()) {
+    const pub = seedSongs.filter((s) => s.visibility === "public");
+    return order === "newest"
+      ? pub.sort((a, b) => b.releasedAt.localeCompare(a.releasedAt))
+      : pub.sort(byPosition);
+  }
+  const rows = await query<Row>(`${SELECT} WHERE visibility = 'public' ORDER BY ${by}`);
   return rows.map(toSong);
 }
 
@@ -162,11 +179,21 @@ export async function reorderSongs(slugs: string[]): Promise<void> {
   );
 }
 
-export async function updateProfile(p: Omit<Profile, "handle">): Promise<void> {
+/**
+ * Counted when a song actually starts, not when the page loads. Failures are
+ * swallowed by the caller: a missed count must never interrupt playback.
+ */
+export async function recordPlay(slug: string): Promise<void> {
+  if (!hasDatabase()) return;
+  await query(`UPDATE songs SET plays = plays + 1 WHERE slug = $1`, [slug]);
+}
+
+export async function updateProfile(p: Profile): Promise<void> {
   requireDatabase();
   await query(
-    `UPDATE profile SET name_ar=$1, name_en=$2, bio_ar=$3, bio_en=$4, photo_url=$5, accent=$6 WHERE id = 1`,
-    [p.name.ar, p.name.en, p.bio.ar, p.bio.en, p.photoUrl, p.accent],
+    `UPDATE profile SET handle=$1, name_ar=$2, name_en=$3, bio_ar=$4, bio_en=$5,
+            photo_url=$6, accent=$7 WHERE id = 1`,
+    [p.handle, p.name.ar, p.name.en, p.bio.ar, p.bio.en, p.photoUrl, p.accent],
   );
 }
 

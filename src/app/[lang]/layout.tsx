@@ -39,7 +39,14 @@ export async function generateMetadata({
   const { lang } = await params;
   const locale: Locale = isLocale(lang) ? lang : DEFAULT_LOCALE;
   const profile = await getProfile();
+
+  // Link previews carry an absolute image URL, so the site's own address has to
+  // be known on the server. Render provides RENDER_EXTERNAL_URL; SITE_URL is the
+  // override for a custom domain.
+  const base = process.env.SITE_URL ?? process.env.RENDER_EXTERNAL_URL;
+
   return {
+    metadataBase: base ? new URL(base) : undefined,
     title: { default: profile.name[locale], template: `%s · ${profile.name[locale]}` },
     description: profile.bio[locale] || undefined,
     openGraph: { siteName: profile.name[locale], type: "profile" },

@@ -1,4 +1,4 @@
-import { getFeaturedSong, getProfile, listPublicSongs } from "@/lib/data";
+import { getFeaturedSong, getProfile, listPublicSongs, type SongOrder } from "@/lib/data";
 import { fill, isLocale, t, type Locale } from "@/lib/i18n";
 import { notFound } from "next/navigation";
 import { Avatar, Cover } from "@/components/Cover";
@@ -6,18 +6,32 @@ import { PlayControl } from "@/components/PlayControl";
 import { SongRow } from "@/components/SongRow";
 import { ShareSheet } from "@/components/ShareSheet";
 import { LangToggle } from "@/components/LangToggle";
-import { NoteIcon, ShuffleIcon, SortIcon } from "@/components/Icons";
+import { NoteIcon, SortIcon } from "@/components/Icons";
+import { ShuffleButton } from "@/components/ShuffleButton";
+import Link from "next/link";
 import { duration, monthYear } from "@/lib/format";
 
-export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
+export default async function HomePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: string }>;
+  searchParams: Promise<{ sort?: string }>;
+}) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale: Locale = lang;
   const dict = t(locale);
 
+  // The order Yazan dragged them into is the default, because it is the one he
+  // controls. A visitor can flip to newest-first; the choice rides in the URL
+  // so a shared link keeps it.
+  const { sort } = await searchParams;
+  const order: SongOrder = sort === "newest" ? "newest" : "custom";
+
   const [profile, songs, featured] = await Promise.all([
     getProfile(),
-    listPublicSongs(),
+    listPublicSongs(order),
     getFeaturedSong(),
   ]);
 
@@ -52,9 +66,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                 text={dict.sharePage}
                 buttonClass="btn btn--primary"
               />
-              <button type="button" className="btn btn--secondary">
-                <ShuffleIcon size={16} /> {dict.shuffle}
-              </button>
+              <ShuffleButton dict={dict} />
             </div>
           </div>
         </section>
@@ -88,9 +100,13 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
             <div className="section-head">
               <h2 className="section-title eyebrow">{dict.songs}</h2>
-              <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--t3)" }}>
-                <SortIcon /> {dict.newest}
-              </span>
+              <Link
+                href={order === "newest" ? `/${locale}` : `/${locale}?sort=newest`}
+                className="sortlink"
+                aria-label={order === "newest" ? dict.sortToCustom : dict.sortToNewest}
+              >
+                <SortIcon /> {order === "newest" ? dict.newest : dict.ownOrder}
+              </Link>
             </div>
             <ul>
               {rest.map((song) => (

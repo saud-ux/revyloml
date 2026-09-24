@@ -16,6 +16,7 @@ const ACCENTS: { value: string; label: Record<Locale, string> }[] = [
 ];
 
 const ERRORS: Record<string, keyof Dict> = {
+  handle: "errHandle",
   "photo-type": "errImageType",
   "photo-size": "errImageSize",
   "photo-upstream": "errUpstream",
@@ -49,6 +50,13 @@ export function ProfileForm({
           </label>
         </div>
       </div>
+
+      <label className="field">
+        <span className="field__label">{dict.handle}</span>
+        <input className="input ltr" name="handle" defaultValue={profile.handle}
+               pattern="[a-zA-Z0-9._]{1,30}" required />
+        <span className="field__hint">{dict.handleHint}</span>
+      </label>
 
       <div className="form__grid">
         <label className="field">

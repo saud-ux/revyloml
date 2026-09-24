@@ -36,6 +36,9 @@ CREATE TABLE IF NOT EXISTS songs (
 
 CREATE INDEX IF NOT EXISTS songs_position_idx ON songs (position);
 
+-- Added after the first deploy, so it has to be safe against an existing table.
+ALTER TABLE songs ADD COLUMN IF NOT EXISTS plays integer NOT NULL DEFAULT 0;
+
 -- At most one pinned song: the featured slot on the home page holds one card.
 CREATE UNIQUE INDEX IF NOT EXISTS songs_one_pinned_idx ON songs (pinned) WHERE pinned;
 `;

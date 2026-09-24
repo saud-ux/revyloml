@@ -9,7 +9,7 @@ import {
 } from "@/components/Icons";
 import { removeSong, saveOrder, togglePinned, toggleVisibility } from "@/app/actions";
 import { duration, monthYear } from "@/lib/format";
-import type { Dict, Locale } from "@/lib/i18n";
+import { fill, type Dict, type Locale } from "@/lib/i18n";
 import type { Song } from "@/lib/types";
 
 /**
@@ -84,6 +84,8 @@ export function AdminSongList({
                 <span className="admin-row__title">{name}</span>
                 <span className="row__meta">
                   {monthYear(song.releasedAt, locale)} · <span className="num">{duration(song.duration)}</span>
+                  {" · "}
+                  <span className="num">{fill(dict.plays, { n: song.plays })}</span>
                 </span>
               </span>
 

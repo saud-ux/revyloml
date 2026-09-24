@@ -7,6 +7,8 @@ import {
   setVisibility, updateProfile, updateSong, type SongInput,
 } from "@/lib/data";
 import { adminConfigured, checkAdminPassword, createSession, destroySession, isSignedIn } from "@/lib/auth";
+import { checkLoginAttempt, clearLoginAttempts } from "@/lib/ratelimit";
+import { headers } from "next/headers";
 import { deleteUpload, saveUpload } from "@/lib/storage";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n";
 import type { Visibility } from "@/lib/types";
@@ -25,7 +27,7 @@ function localeFrom(value: FormDataEntryValue | null): Locale {
   return isLocale(v) ? v : DEFAULT_LOCALE;
 }
 
-export type FormState = { error?: string } | undefined;
+export type FormState = { error?: string; retryAfterSeconds?: number } | undefined;
 
 // ---------------------------------------------------------------- session
 
@@ -36,10 +38,23 @@ export async function signIn(_prev: FormState, form: FormData): Promise<FormStat
   if (!adminConfigured()) {
     return { error: "This deployment has no admin password set (ADMIN_PASSWORD or ADMIN_PASSWORD_HASH, plus SESSION_SECRET)." };
   }
+
+  // Behind a proxy the socket address is Render's, so the forwarded address is
+  // the only thing that distinguishes callers. It can be spoofed, which caps
+  // what this is worth: it slows down a guesser, it does not stop a determined
+  // one. Everything falls into one shared bucket if the header is missing.
+  const forwarded = (await headers()).get("x-forwarded-for") ?? "";
+  const ip = forwarded.split(",")[0].trim() || "unknown";
+
+  const limit = checkLoginAttempt(ip);
+  if (!limit.allowed) return { error: "rate", retryAfterSeconds: limit.retryAfterSeconds };
+
   if (!(await checkAdminPassword(password))) {
     // One message for a wrong password and for a missing one: nothing to probe.
     return { error: "wrong" };
   }
+
+  clearLoginAttempts(ip);
   await createSession();
   redirect(`/${locale}/admin`);
 }
@@ -148,7 +163,13 @@ export async function saveProfile(_prev: FormState, form: FormData): Promise<For
     photoUrl = saved.url;
   }
 
+  // Lowercase letters, digits, dot and underscore: it has to survive being read
+  // aloud and typed into a URL.
+  const handle = String(form.get("handle") ?? "").trim().replace(/^@/, "").toLowerCase();
+  if (!/^[a-z0-9._]{1,30}$/.test(handle)) return { error: "handle" };
+
   await updateProfile({
+    handle,
     name: { ar: String(form.get("nameAr") ?? "").trim(), en: String(form.get("nameEn") ?? "").trim() },
     bio: { ar: String(form.get("bioAr") ?? "").trim(), en: String(form.get("bioEn") ?? "").trim() },
     photoUrl,

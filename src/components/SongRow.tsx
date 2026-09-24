@@ -63,7 +63,7 @@ function RowCover({
       aria-disabled={disabled || undefined}
       title={disabled ? dict.noAudio : undefined}
       aria-label={
-        disabled ? `${title} — ${dict.noAudio}` : `${isCurrent && playing ? dict.pause : dict.play} ${title}`
+        disabled ? `${title}. ${dict.noAudio}` : `${isCurrent && playing ? dict.pause : dict.play} ${title}`
       }
       onClick={() => !disabled && playSong(song)}
     >

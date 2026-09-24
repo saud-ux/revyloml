@@ -16,6 +16,8 @@ export type Song = {
   visibility: Visibility;
   pinned: boolean;
   position: number;
+  /** how many times it has been started; admin only */
+  plays: number;
 };
 
 export type Profile = {
