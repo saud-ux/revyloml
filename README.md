@@ -71,9 +71,11 @@ Two rules that live in the data layer and must survive that swap:
   list, reachable by direct link. The song page also marks hidden songs
   `noindex` so they never turn up in search.
 
-The first boot against an empty database creates the schema and seeds it from
-`data/songs.json`. That seed only fires into an empty `songs` table, so it never
-overwrites anything edited or deleted afterwards.
+The first boot against an empty database creates the schema and inserts the
+profile row. **No songs are seeded.** An earlier version inserted placeholders
+whenever the table was empty, which meant deleting every song brought them all
+back on the next restart — and a free instance restarts every time it wakes from
+sleep. Yazan starts from an empty page and adds his own.
 
 **Audio files.** Songs uploaded through the admin get an `audioUrl` pointing at
 `/media/…`. Seeded songs have none, so their play controls render disabled with

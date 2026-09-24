@@ -18,7 +18,8 @@ import { randomBytes } from "node:crypto";
  * knows or cares which one is in play.
  */
 
-export const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), ".uploads");
+export const UPLOAD_DIR =
+  process.env.UPLOAD_DIR ?? path.join(process.cwd(), ".uploads");
 const BUCKET = process.env.SUPABASE_BUCKET ?? "media";
 
 function supabase(): { url: string; key: string } | null {
@@ -32,23 +33,48 @@ export function storageBackend(): "supabase" | "disk" {
 }
 
 const AUDIO_TYPES = new Set([
-  "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav",
-  "audio/mp4", "audio/x-m4a", "audio/aac", "audio/ogg",
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/mp4",
+  "audio/x-m4a",
+  "audio/aac",
+  "audio/ogg",
 ]);
-const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+const IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+]);
 
 export const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 const EXT: Record<string, string> = {
-  "audio/mpeg": ".mp3", "audio/mp3": ".mp3", "audio/wav": ".wav", "audio/x-wav": ".wav",
-  "audio/mp4": ".m4a", "audio/x-m4a": ".m4a", "audio/aac": ".aac", "audio/ogg": ".ogg",
-  "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/avif": ".avif",
+  "audio/mpeg": ".mp3",
+  "audio/mp3": ".mp3",
+  "audio/wav": ".wav",
+  "audio/x-wav": ".wav",
+  "audio/mp4": ".m4a",
+  "audio/x-m4a": ".m4a",
+  "audio/aac": ".aac",
+  "audio/ogg": ".ogg",
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+  "image/avif": ".avif",
 };
 
-export type SaveResult = { ok: true; url: string } | { ok: false; error: "type" | "size" | "upstream" };
+export type SaveResult =
+  | { ok: true; url: string }
+  | { ok: false; error: "type" | "size" | "upstream" };
 
-export async function saveUpload(file: File, kind: "audio" | "image"): Promise<SaveResult> {
+export async function saveUpload(
+  file: File,
+  kind: "audio" | "image",
+): Promise<SaveResult> {
   const allowed = kind === "audio" ? AUDIO_TYPES : IMAGE_TYPES;
   const limit = kind === "audio" ? MAX_AUDIO_BYTES : MAX_IMAGE_BYTES;
 
@@ -61,29 +87,48 @@ export async function saveUpload(file: File, kind: "audio" | "image"): Promise<S
   const sb = supabase();
 
   if (sb) {
-    const res = await fetch(`${sb.url}/storage/v1/object/${BUCKET}/${name}`, {
-      method: "POST",
-      headers: {
-        // Both headers, because Supabase has two key formats in circulation:
-        // the legacy service_role JWT and the newer sb_secret_… keys. The
-        // legacy one is accepted as a bearer token; the new one is expected in
-        // apikey. Sending both means either key works.
-        apikey: sb.key,
-        Authorization: `Bearer ${sb.key}`,
-        "Content-Type": file.type,
-        "Cache-Control": "31536000",
-      },
-      body: file,
-    });
-    if (!res.ok) {
-      console.error("Supabase upload failed", res.status, await res.text().catch(() => ""));
+    // fetch throws on a connection failure rather than returning a response, so
+    // a Supabase blip has to be caught here — otherwise it escapes the action
+    // and Yazan gets a crash page instead of "try again".
+    let res: Response;
+    try {
+      res = await fetch(`${sb.url}/storage/v1/object/${BUCKET}/${name}`, {
+        method: "POST",
+        headers: {
+          // Both headers, because Supabase has two key formats in circulation:
+          // the legacy service_role JWT and the newer sb_secret_… keys. The
+          // legacy one is accepted as a bearer token; the new one is expected in
+          // apikey. Sending both means either key works.
+          apikey: sb.key,
+          Authorization: `Bearer ${sb.key}`,
+          "Content-Type": file.type,
+          "Cache-Control": "31536000",
+        },
+        body: file,
+      });
+    } catch (err) {
+      console.error("Supabase upload unreachable", err);
       return { ok: false, error: "upstream" };
     }
-    return { ok: true, url: `${sb.url}/storage/v1/object/public/${BUCKET}/${name}` };
+    if (!res.ok) {
+      console.error(
+        "Supabase upload failed",
+        res.status,
+        await res.text().catch(() => ""),
+      );
+      return { ok: false, error: "upstream" };
+    }
+    return {
+      ok: true,
+      url: `${sb.url}/storage/v1/object/public/${BUCKET}/${name}`,
+    };
   }
 
   await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(path.join(UPLOAD_DIR, name), Buffer.from(await file.arrayBuffer()));
+  await writeFile(
+    path.join(UPLOAD_DIR, name),
+    Buffer.from(await file.arrayBuffer()),
+  );
   return { ok: true, url: `/media/${name}` };
 }
 

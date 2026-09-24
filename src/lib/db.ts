@@ -1,6 +1,5 @@
 import "server-only";
 import { Pool } from "pg";
-import seedSongs from "../../data/songs.json";
 import { SCHEMA } from "./schema";
 
 /**
@@ -32,9 +31,12 @@ function getPool(): Pool {
 }
 
 /**
- * Creates the schema on first use and seeds it once. Safe to run on every boot:
- * the seed only fires into an empty songs table, so it never overwrites
- * anything Yazan has since edited or deleted.
+ * Creates the schema on first use. Safe to run on every boot.
+ *
+ * Deliberately seeds no songs. An earlier version inserted placeholder tracks
+ * whenever the table was empty, which is a trap: delete every song and the next
+ * restart puts them all back — and a free instance restarts every time it wakes
+ * from sleep. An empty page is a real state, and the one Yazan starts from.
  */
 async function migrate(): Promise<void> {
   const db = getPool();
@@ -43,26 +45,7 @@ async function migrate(): Promise<void> {
     `INSERT INTO profile (id, name_ar, name_en) VALUES (1, 'يزن', 'Yazan')
      ON CONFLICT (id) DO NOTHING`,
   );
-
-  const { rows } = await db.query<{ n: string }>("SELECT count(*) AS n FROM songs");
-  if (Number(rows[0].n) > 0) return;
-
-  for (const s of seedSongs as SeedSong[]) {
-    await db.query(
-      `INSERT INTO songs (slug, title_ar, title_en, released_at, duration, audio_url,
-                          cover_url, lyrics, visibility, pinned, position)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (slug) DO NOTHING`,
-      [s.slug, s.title.ar, s.title.en, s.releasedAt, s.duration, s.audioUrl,
-       s.coverUrl, s.lyrics, s.visibility, s.pinned, s.position],
-    );
-  }
 }
-
-type SeedSong = {
-  slug: string; title: { ar: string; en: string }; releasedAt: string; duration: number;
-  audioUrl: string | null; coverUrl: string | null; lyrics: string;
-  visibility: string; pinned: boolean; position: number;
-};
 
 export async function query<T extends Record<string, unknown>>(
   text: string,
