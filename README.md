@@ -56,7 +56,13 @@ locally, copy `.env.example` to `.env.local` and fill in `DATABASE_URL`,
 | `/api/plays` | records that a song started; called by the player |
 
 Every public URL carries its locale, so a link shared in Arabic opens in Arabic
-on someone else's phone. `middleware.ts` handles the redirect.
+on someone else's phone, whatever their device says.
+
+A visitor arriving without a locale (just the bare domain) gets the language
+their browser asks for: Arabic if their device lists Arabic, English otherwise.
+Most people who receive a link will not read Arabic unless their phone says they
+do, and a page someone cannot read is worse than one in the wrong script for its
+owner. `middleware.ts` handles both.
 
 ## Data
 
@@ -134,6 +140,15 @@ then copy the connection string, the project URL and the `service_role` key into
 `DATABASE_URL`, `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`. Render generates
 `SESSION_SECRET` and asks you for `ADMIN_PASSWORD`.
 
+### Reordering on a phone
+
+Drag-to-reorder in the admin uses pointer events, not HTML5 drag and drop, which
+does not fire on touch screens at all. The pointer listeners live on the window
+rather than the handle: reordering moves the handle's own row in the DOM, which
+drops its pointer capture, so an element-bound `pointerup` never arrives and the
+new order is silently never saved. The arrow buttons stay regardless, because a
+list you can only reorder by dragging is a list some people cannot reorder.
+
 ### Keeping it awake
 
 Two scheduled pings, because two different things go to sleep.
@@ -190,6 +205,23 @@ The image URL has to be absolute, so the server needs to know its own address.
 Render sets `RENDER_EXTERNAL_URL` by itself; set `SITE_URL` to override it for a
 custom domain.
 
+## Backups
+
+Supabase's free plan takes none, so the app takes its own. A snapshot holds
+titles, dates, lyrics, order, visibility and the profile; the audio and artwork
+live in storage and are not copied, because losing the database is the failure
+this guards against.
+
+- **Weekly, automatic.** A scheduler calls `/api/backup?token=…` and a snapshot
+  is filed in a private `backups` bucket, created on first use so nobody has to
+  make it by hand. The newest eight are kept. The full URL, token included, is
+  printed in the admin's Backups panel: it sits behind the login, and all it can
+  do is ask the server to file a snapshot.
+- **On demand.** A button in the same panel downloads a fresh snapshot. That is
+  the copy that ends up somewhere other than this project, which matters:
+  snapshots in the same Supabase project survive a bad delete, not the loss of
+  the project itself.
+
 ## Play counts
 
 The player posts to `/api/plays` when a track actually starts, not when a page
@@ -203,3 +235,4 @@ started twice in one session counts once. They appear in the admin list only.
 - Audio duration is read in the browser at upload time. A file the browser
   cannot decode is stored with a duration of 0.
 - Login rate limiting is per instance and in memory, so a restart clears it.
+- Backups cover the database only. Audio and artwork are not copied anywhere.

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { listAllSongs } from "@/lib/data";
 import { fill, isLocale, t, type Locale } from "@/lib/i18n";
 import { AdminSongList } from "@/components/admin/AdminSongList";
+import { AdminGuide } from "@/components/admin/AdminGuide";
+import { BackupPanel } from "@/components/admin/BackupPanel";
+import { headers } from "next/headers";
 import { PlusIcon, UserIcon } from "@/components/Icons";
 
 export default async function AdminPage({ params }: { params: Promise<{ lang: string }> }) {
@@ -11,8 +14,16 @@ export default async function AdminPage({ params }: { params: Promise<{ lang: st
   const songs = await listAllSongs();
   const hiddenCount = songs.filter((s) => s.visibility === "hidden").length;
 
+  // The address the browser actually used, so the guide shows the real link
+  // rather than one built from a variable that may not be set.
+  const host = (await headers()).get("host") ?? "";
+  const proto = process.env.NODE_ENV === "production" ? "https" : "http";
+  const origin = process.env.SITE_URL ?? process.env.RENDER_EXTERNAL_URL ?? (host ? `${proto}://${host}` : "");
+  const publicUrl = `${origin}/${locale}`;
+
   return (
     <>
+      <AdminGuide dict={dict} publicUrl={publicUrl} />
       <div className="admin-head">
         <div>
           <h1 className="admin-title">{dict.yourSongs}</h1>
@@ -36,8 +47,11 @@ export default async function AdminPage({ params }: { params: Promise<{ lang: st
           songs={songs}
           locale={locale}
           dict={dict}
+          origin={origin}
         />
       )}
+
+      <BackupPanel dict={dict} locale={locale} origin={origin} />
     </>
   );
 }

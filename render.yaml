@@ -18,6 +18,10 @@
 #   https://<your-service>.onrender.com/api/health          every 10 minutes
 #   https://<your-service>.onrender.com/api/health?deep=1   once a day
 #
+# A third schedule takes the weekly backup. Its URL carries a token, so it is
+# printed inside the admin page rather than here: sign in and copy it from the
+# Backups panel.
+#
 # Two pings, because they keep two different things alive. The frequent one
 # touches no database, so it costs nothing on Supabase's free tier. The daily
 # one runs a single query, because Supabase pauses a free project after about a
@@ -61,3 +65,8 @@ services:
         sync: false
       - key: SUPABASE_BUCKET
         value: media
+      # Lets a scheduler ask for a weekly backup. The full URL to paste into the
+      # scheduler is shown inside the admin page, so you never have to read this
+      # value out of the dashboard.
+      - key: BACKUP_TOKEN
+        generateValue: true
