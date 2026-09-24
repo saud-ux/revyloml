@@ -19,6 +19,14 @@ const plex = IBM_Plex_Sans_Arabic({
 
 export const dynamicParams = false;
 
+/**
+ * Rendered per request rather than prerendered. Yazan edits his own content, so
+ * a page cached at build time would show whatever the database held when the
+ * deploy ran — or, if the build had no database, the JSON seed. Traffic here is
+ * one artist's audience; a query per request costs nothing next to that bug.
+ */
+export const dynamic = "force-dynamic";
+
 export async function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
 }

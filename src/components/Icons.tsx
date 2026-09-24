@@ -43,3 +43,24 @@ export const NoteIcon = ({ size = 28 }: P) =>
 export const ArrowOutIcon = ({ size = 21 }: P) => stroke('<path d="M7 17 17 7"/><path d="M8.6 7H17v8.4"/>', size);
 export const WhatsAppIcon = ({ size = 24 }: P) =>
   stroke('<path d="M20.4 11.6a8.4 8.4 0 0 1-12.5 7.3L3.6 20.4l1.5-4.2A8.4 8.4 0 1 1 20.4 11.6z"/><path d="M9.2 9.2c.3-.7.6-.7.9-.7h.5c.2 0 .5 0 .7.6l.7 1.6c.1.3 0 .5-.1.7l-.4.5c-.1.2-.2.3 0 .6a6.2 6.2 0 0 0 2.6 2.2c.3.1.5.1.7-.1l.5-.6c.2-.2.4-.2.6-.1l1.5.8c.3.2.4.4.3.7a2.1 2.1 0 0 1-1.9 1.4c-.9 0-3.3-.9-5-2.9-1.4-1.6-1.9-3-1.9-3.8a2.4 2.4 0 0 1 .3-.9z"/>', size);
+export const LockIcon = ({ size = 22 }: P) =>
+  stroke('<rect x="4.8" y="10.3" width="14.4" height="9.7" rx="2.6"/><path d="M8.4 10.3V7.9a3.6 3.6 0 0 1 7.2 0v2.4"/>', size);
+export const PlusIcon = ({ size = 18 }: P) => stroke('<path d="M12 5v14M5 12h14"/>', size);
+export const UserIcon = ({ size = 18 }: P) =>
+  stroke('<circle cx="12" cy="8.4" r="3.8"/><path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0"/>', size);
+export const TrashIcon = ({ size = 17 }: P) =>
+  stroke('<path d="M4.5 7h15"/><path d="M9.2 7V5.6A1.6 1.6 0 0 1 10.8 4h2.4a1.6 1.6 0 0 1 1.6 1.6V7"/><path d="M6.6 7l.8 11.3A2 2 0 0 0 9.4 20.2h5.2a2 2 0 0 0 2-1.9L17.4 7"/>', size);
+export const PencilIcon = ({ size = 17 }: P) =>
+  stroke('<path d="M4.2 20.1 8.6 19 18.9 8.7a2 2 0 0 0 0-2.8l-.8-.8a2 2 0 0 0-2.8 0L5 15.4z"/><path d="M14.4 6.9l2.7 2.7"/>', size);
+export const EyeIcon = ({ size = 17 }: P) =>
+  stroke('<path d="M2.6 12S6.1 5.7 12 5.7 21.4 12 21.4 12 17.9 18.3 12 18.3 2.6 12 2.6 12z"/><circle cx="12" cy="12" r="3"/>', size);
+export const EyeOffIcon = ({ size = 17 }: P) =>
+  stroke('<path d="M4 4l16 16"/><path d="M9.8 6A9.3 9.3 0 0 1 12 5.7c5.9 0 9.4 6.3 9.4 6.3a17.4 17.4 0 0 1-3.2 3.9"/><path d="M6.4 8.2A17.2 17.2 0 0 0 2.6 12S6.1 18.3 12 18.3a9.2 9.2 0 0 0 3.5-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>', size);
+export const PinIcon = ({ size = 17 }: P) =>
+  stroke('<path d="M9.2 3.6h5.6l-.7 5.1 2.9 2.6-.2 1.7H6.2L6 11.3l2.9-2.6z"/><path d="M12 13v7.4"/>', size);
+export const GripIcon = ({ size = 18 }: P) =>
+  stroke('<path d="M9 6.5h.01M15 6.5h.01M9 12h.01M15 12h.01M9 17.5h.01M15 17.5h.01"/>', size, undefined, 2.4);
+export const ImageIcon = ({ size = 16 }: P) =>
+  stroke('<rect x="3.4" y="4.6" width="17.2" height="14.8" rx="2.6"/><circle cx="8.9" cy="10" r="1.7"/><path d="M4.2 17.3 9 12.6l3.4 3.3 3.1-3 4.3 4.4"/>', size);
+export const ChevronUpIcon = ({ size = 16 }: P) => stroke('<path d="M6 15l6-6 6 6"/>', size, undefined, 2);
+export const ChevronDownIcon = ({ size = 16 }: P) => stroke('<path d="M6 9l6 6 6-6"/>', size, undefined, 2);
