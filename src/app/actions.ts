@@ -60,13 +60,13 @@ async function readSongForm(form: FormData, existingAudio: string | null, existi
 
   if (audio instanceof File && audio.size > 0) {
     const saved = await saveUpload(audio, "audio");
-    if (!saved.ok) return { error: saved.error === "size" ? "audio-size" : "audio-type" } as const;
+    if (!saved.ok) return { error: `audio-${saved.error}` } as const;
     await deleteUpload(existingAudio);
     audioUrl = saved.url;
   }
   if (cover instanceof File && cover.size > 0) {
     const saved = await saveUpload(cover, "image");
-    if (!saved.ok) return { error: saved.error === "size" ? "cover-size" : "cover-type" } as const;
+    if (!saved.ok) return { error: `cover-${saved.error}` } as const;
     await deleteUpload(existingCover);
     coverUrl = saved.url;
   }
@@ -143,7 +143,7 @@ export async function saveProfile(_prev: FormState, form: FormData): Promise<For
 
   if (photo instanceof File && photo.size > 0) {
     const saved = await saveUpload(photo, "image");
-    if (!saved.ok) return { error: saved.error === "size" ? "photo-size" : "photo-type" };
+    if (!saved.ok) return { error: `photo-${saved.error}` };
     await deleteUpload(photoUrl);
     photoUrl = saved.url;
   }

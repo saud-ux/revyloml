@@ -15,6 +15,8 @@ const ERRORS: Record<string, keyof Dict> = {
   "audio-size": "errAudioSize",
   "cover-type": "errImageType",
   "cover-size": "errImageSize",
+  "audio-upstream": "errUpstream",
+  "cover-upstream": "errUpstream",
 };
 
 export function SongForm({

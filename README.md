@@ -23,8 +23,9 @@ rejected. It is not in this repo and should not be reintroduced piecemeal.
   RTL for free from one stylesheet.
 - **Postgres** over `DATABASE_URL` — the same variable works for Render Postgres
   and for Supabase, so the hosting choice stays open.
-- Uploaded files on disk, served through a Range-capable route so phones can
-  seek inside a track.
+- Uploaded files on **Supabase Storage** or a local disk, whichever the
+  environment configures. The disk path is served through a Range-capable route
+  so phones can seek inside a track.
 
 ## Running it
 
@@ -108,19 +109,36 @@ a filesystem path.
 "At most one pinned song" is enforced by a partial unique index in the schema,
 so pinning runs in a transaction — the unpin and the pin must not be seen apart.
 
-## Deploying to Render
+## Deploying
 
-`render.yaml` is a Blueprint: **New > Blueprint**, point it at this repo. It
-creates the web service and Postgres, wires `DATABASE_URL` and generates
-`SESSION_SECRET`. Render prompts you for `ADMIN_PASSWORD` — type the password
-you want and nothing else is needed.
+`render.yaml` is a Blueprint: **New > Blueprint**, point it at this repo.
 
-One thing worth knowing before you click: **the disk is not optional.** Uploaded
-audio lives on it, and Render wipes the container filesystem on every deploy, so
-without a disk every upload disappears the next time you deploy. Disks require a
-paid instance type. If you would rather stay on free tiers, move `src/lib/storage.ts`
-to object storage (S3, R2 or Supabase Storage) — it is one file with two
-functions, and nothing else touches the filesystem.
+It is written for the **free** setup — a free Render web service, with Postgres
+and file storage on Supabase's free tier. Neither of Render's own free
+offerings can hold anything you want to keep: free Postgres expires after about
+30 days, and free web instances get no persistent disk, so the container
+filesystem (and every upload on it) is wiped on each deploy.
+
+In Supabase first: create a project, create a **public** bucket named `media`,
+then copy the connection string, the project URL and the `service_role` key into
+`DATABASE_URL`, `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`. Render generates
+`SESSION_SECRET` and asks you for `ADMIN_PASSWORD`.
+
+### Keeping it awake
+
+A free instance sleeps after ~15 minutes idle, and the first person to open a
+shared link then waits about a minute — bad for the one thing this site is for.
+Point an external pinger at `/api/health` every 10 minutes. That route touches
+no database, so a 24/7 pinger costs nothing on Supabase's free tier. One
+always-awake free service fits inside Render's monthly free instance-hours; a
+second one would not.
+
+### The paid setup instead
+
+Set the service `plan` to `starter`, add a disk mounted at `/var/data`, set
+`UPLOAD_DIR=/var/data/uploads`, and leave the `SUPABASE_*` storage variables
+empty. Files then go to the disk, the service never sleeps, and no pinger is
+needed.
 
 ## Playback
 

@@ -1,46 +1,53 @@
 # Render Blueprint — New > Blueprint, point it at this repo.
 #
-# It creates the web service and the Postgres database, wires DATABASE_URL, and
-# generates SESSION_SECRET. Two things it cannot do for you:
+# This is the FREE setup: a free Render web service, with Postgres and file
+# storage on Supabase's free tier. Render's own free Postgres expires after
+# about 30 days and free instances get no disk, so neither can hold anything
+# you want to keep.
 #
-#   1. ADMIN_PASSWORD is marked sync:false, so Render asks you for it — just
-#      type the password you want. No terminal needed. If you prefer to store a
-#      hash instead, run `npm run hash-password -- "..."` and set
-#      ADMIN_PASSWORD_HASH instead; it wins when both are present.
-#   2. The disk needs a paid instance type. The audio files live on it; the
-#      container filesystem is wiped on every deploy, so without a disk every
-#      upload disappears at the next deploy.
+# Before deploying, in Supabase:
+#   1. Create a project. Copy the connection string into DATABASE_URL.
+#   2. Storage > New bucket, named "media", marked PUBLIC.
+#   3. Copy the service_role key into SUPABASE_SERVICE_KEY. It bypasses row
+#      level security, so it belongs only in this server's environment.
 #
-# Plan names change over time — if Render rejects one, pick the equivalent in
-# the UI and the rest of the blueprint still applies.
+# A free instance sleeps after ~15 minutes idle, and the first visitor to a
+# shared link then waits ~1 minute. Point an external pinger (cron-job.org,
+# UptimeRobot, a GitHub Actions schedule) at:
+#
+#   https://<your-service>.onrender.com/api/health   every 10 minutes
+#
+# That endpoint touches no database, so keeping the service awake costs nothing
+# on Supabase's free tier. One always-awake free service fits inside Render's
+# monthly free instance-hours; a second one would not.
+#
+# To move to the paid setup instead: change plan to "starter", add a disk at
+# /var/data, set UPLOAD_DIR=/var/data/uploads, and drop the SUPABASE_* storage
+# variables — files then go to the disk and the pinger is unnecessary.
 
 services:
   - type: web
     name: revyloml
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm ci && npm run build
     startCommand: npm start
-    healthCheckPath: /ar
-    disk:
-      name: media
-      mountPath: /var/data
-      sizeGB: 5
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Supabase > Project settings > Database > Connection string (URI).
       - key: DATABASE_URL
-        fromDatabase:
-          name: revyloml-db
-          property: connectionString
-      - key: SESSION_SECRET
-        generateValue: true
+        sync: false
+      # The password you want. Typed here, hashed at boot.
       - key: ADMIN_PASSWORD
         sync: false
-      - key: UPLOAD_DIR
-        value: /var/data/uploads
-
-databases:
-  - name: revyloml-db
-    databaseName: revyloml
-    plan: basic-256mb
+      - key: SESSION_SECRET
+        generateValue: true
+      # Supabase > Project settings > API.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: media

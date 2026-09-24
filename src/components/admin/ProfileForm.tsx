@@ -18,6 +18,7 @@ const ACCENTS: { value: string; label: Record<Locale, string> }[] = [
 const ERRORS: Record<string, keyof Dict> = {
   "photo-type": "errImageType",
   "photo-size": "errImageSize",
+  "photo-upstream": "errUpstream",
 };
 
 export function ProfileForm({

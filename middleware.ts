@@ -18,5 +18,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|favicon.ico|audio|.*\\.[\\w]+$).*)"],
+  // Locale prefixing is for pages only. API routes, uploaded media and Next's
+  // own assets must pass through untouched — /api/health is what keeps a free
+  // instance awake, and redirecting it would fail the deploy's health check.
+  matcher: ["/((?!api|media|_next|favicon.ico|icon.svg|.*\\.[\\w]+$).*)"],
 };

@@ -94,6 +94,7 @@ const dict = {
     errAudioSize: "حجم الملف الصوتي أكبر من 50 ميغابايت.",
     errImageType: "نوع الصورة غير مدعوم.",
     errImageSize: "حجم الصورة أكبر من 5 ميغابايت.",
+    errUpstream: "ما قدرنا نرفع الملف. جرّب مرة ثانية.",
     noSongs: "ما في أغاني بعد.",
   },
   en: {
@@ -180,6 +181,7 @@ const dict = {
     errAudioSize: "The audio file is larger than 50 MB.",
     errImageType: "That image format isn't supported.",
     errImageSize: "The image is larger than 5 MB.",
+    errUpstream: "The file could not be uploaded. Try again.",
     noSongs: "No songs yet.",
   },
 } as const;
