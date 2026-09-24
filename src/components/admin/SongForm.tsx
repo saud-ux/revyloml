@@ -9,6 +9,8 @@ import { duration as fmtDuration } from "@/lib/format";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Song } from "@/lib/types";
 
+const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+
 const ERRORS: Record<string, keyof Dict> = {
   title: "errTitle",
   "audio-type": "errAudioType",
@@ -28,6 +30,7 @@ export function SongForm({
 }) {
   const [state, action, pending] = useActionState(saveSong, undefined);
   const [audioName, setAudioName] = useState<string | null>(null);
+  const [audioBytes, setAudioBytes] = useState(0);
   const [seconds, setSeconds] = useState(song?.duration ?? 0);
   const [titleAr, setTitleAr] = useState(song?.title.ar ?? "");
 
@@ -39,6 +42,7 @@ export function SongForm({
     const file = e.target.files?.[0];
     if (!file) return;
     setAudioName(file.name);
+    setAudioBytes(file.size);
     const url = URL.createObjectURL(file);
     const probe = new Audio();
     probe.preload = "metadata";
@@ -68,8 +72,14 @@ export function SongForm({
           <input type="file" name="audio" accept="audio/*" className="sr-only" onChange={onAudio} />
         </label>
         <span className="dropzone__hint">
-          {audioName ? `${audioName} · ${fmtDuration(seconds)}` : song?.audioUrl ? fmtDuration(seconds) : dict.formats}
+          {audioName ? `${audioName} · ${fmtDuration(seconds)} · ${mb(audioBytes)}` : song?.audioUrl ? fmtDuration(seconds) : dict.formats}
         </span>
+        {/* Nothing re-encodes the upload, so the file Yazan picks is the file
+            every listener downloads. A WAV is a slow page on mobile data. */}
+        {!audioName && <span className="dropzone__hint">{dict.formatsHint}</span>}
+        {audioBytes > 12 * 1024 * 1024 && (
+          <span className="dropzone__warn">{dict.formatsHint}</span>
+        )}
       </div>
 
       <div className="form__grid">
