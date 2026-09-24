@@ -36,6 +36,10 @@ services:
     name: revyloml
     runtime: node
     plan: free
+    # Co-located with the Supabase project (ap-southeast-1). Every page render
+    # queries the database, so the web service belongs next to it — a visitor's
+    # single round trip beats the server making several across an ocean.
+    region: singapore
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
