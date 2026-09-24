@@ -15,11 +15,17 @@
 # shared link then waits ~1 minute. Point an external pinger (cron-job.org,
 # UptimeRobot, a GitHub Actions schedule) at:
 #
-#   https://<your-service>.onrender.com/api/health   every 10 minutes
+#   https://<your-service>.onrender.com/api/health          every 10 minutes
+#   https://<your-service>.onrender.com/api/health?deep=1   once a day
 #
-# That endpoint touches no database, so keeping the service awake costs nothing
-# on Supabase's free tier. One always-awake free service fits inside Render's
-# monthly free instance-hours; a second one would not.
+# Two pings, because they keep two different things alive. The frequent one
+# touches no database, so it costs nothing on Supabase's free tier. The daily
+# one runs a single query, because Supabase pauses a free project after about a
+# week with no database activity — without it a quiet month would take the site
+# down and the shallow ping would never notice.
+#
+# One always-awake free service fits inside Render's monthly free
+# instance-hours; a second one would not.
 #
 # To move to the paid setup instead: change plan to "starter", add a disk at
 # /var/data, set UPLOAD_DIR=/var/data/uploads, and drop the SUPABASE_* storage

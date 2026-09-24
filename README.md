@@ -126,12 +126,16 @@ then copy the connection string, the project URL and the `service_role` key into
 
 ### Keeping it awake
 
-A free instance sleeps after ~15 minutes idle, and the first person to open a
-shared link then waits about a minute — bad for the one thing this site is for.
-Point an external pinger at `/api/health` every 10 minutes. That route touches
-no database, so a 24/7 pinger costs nothing on Supabase's free tier. One
-always-awake free service fits inside Render's monthly free instance-hours; a
-second one would not.
+Two scheduled pings, because two different things go to sleep.
+
+| Ping | Every | Why |
+| --- | --- | --- |
+| `/api/health` | 10 minutes | A free Render instance sleeps after ~15 minutes idle, and the first person to open a shared link then waits about a minute. This route touches no database, so a 24/7 pinger costs nothing on the storage/database free tier. |
+| `/api/health?deep=1` | 1 day | Supabase pauses a free project after about a week with no database activity. The shallow ping would never wake it, so a quiet month would take the site down. This one runs a single query. |
+
+Any free scheduler works — cron-job.org, UptimeRobot, a GitHub Actions
+schedule. One always-awake free service fits inside Render's monthly free
+instance-hours; a second one would not.
 
 ### The paid setup instead
 
