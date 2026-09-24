@@ -64,6 +64,11 @@ export async function saveUpload(file: File, kind: "audio" | "image"): Promise<S
     const res = await fetch(`${sb.url}/storage/v1/object/${BUCKET}/${name}`, {
       method: "POST",
       headers: {
+        // Both headers, because Supabase has two key formats in circulation:
+        // the legacy service_role JWT and the newer sb_secret_… keys. The
+        // legacy one is accepted as a bearer token; the new one is expected in
+        // apikey. Sending both means either key works.
+        apikey: sb.key,
         Authorization: `Bearer ${sb.key}`,
         "Content-Type": file.type,
         "Cache-Control": "31536000",
@@ -91,7 +96,7 @@ export async function deleteUpload(url: string | null): Promise<void> {
     const name = url.split("/").pop()!;
     await fetch(`${sb.url}/storage/v1/object/${BUCKET}/${name}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${sb.key}` },
+      headers: { apikey: sb.key, Authorization: `Bearer ${sb.key}` },
     }).catch(() => {});
     return;
   }
