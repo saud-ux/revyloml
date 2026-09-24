@@ -6,7 +6,7 @@ import {
   createSong, deleteSong, getSong, newSlug, reorderSongs, setPinned,
   setVisibility, updateProfile, updateSong, type SongInput,
 } from "@/lib/data";
-import { adminConfigured, createSession, destroySession, isSignedIn, verifyPassword } from "@/lib/auth";
+import { adminConfigured, checkAdminPassword, createSession, destroySession, isSignedIn } from "@/lib/auth";
 import { deleteUpload, saveUpload } from "@/lib/storage";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n";
 import type { Visibility } from "@/lib/types";
@@ -34,9 +34,9 @@ export async function signIn(_prev: FormState, form: FormData): Promise<FormStat
   const password = String(form.get("password") ?? "");
 
   if (!adminConfigured()) {
-    return { error: "This deployment has no admin password set (ADMIN_PASSWORD_HASH, SESSION_SECRET)." };
+    return { error: "This deployment has no admin password set (ADMIN_PASSWORD or ADMIN_PASSWORD_HASH, plus SESSION_SECRET)." };
   }
-  if (!(await verifyPassword(password, process.env.ADMIN_PASSWORD_HASH!))) {
+  if (!(await checkAdminPassword(password))) {
     // One message for a wrong password and for a missing one: nothing to probe.
     return { error: "wrong" };
   }

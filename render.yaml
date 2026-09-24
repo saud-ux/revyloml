@@ -3,8 +3,10 @@
 # It creates the web service and the Postgres database, wires DATABASE_URL, and
 # generates SESSION_SECRET. Two things it cannot do for you:
 #
-#   1. ADMIN_PASSWORD_HASH is marked sync:false, so Render asks you for it.
-#      Generate it locally with:  npm run hash-password -- "your password"
+#   1. ADMIN_PASSWORD is marked sync:false, so Render asks you for it — just
+#      type the password you want. No terminal needed. If you prefer to store a
+#      hash instead, run `npm run hash-password -- "..."` and set
+#      ADMIN_PASSWORD_HASH instead; it wins when both are present.
 #   2. The disk needs a paid instance type. The audio files live on it; the
 #      container filesystem is wiped on every deploy, so without a disk every
 #      upload disappears at the next deploy.
@@ -33,7 +35,7 @@ services:
           property: connectionString
       - key: SESSION_SECRET
         generateValue: true
-      - key: ADMIN_PASSWORD_HASH
+      - key: ADMIN_PASSWORD
         sync: false
       - key: UPLOAD_DIR
         value: /var/data/uploads

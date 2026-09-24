@@ -11,15 +11,35 @@ const COOKIE = "revylo_session";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 /**
- * One person signs in here, so there is no user table and no auth library: a
- * scrypt hash of his password lives in ADMIN_PASSWORD_HASH, and the session is
- * an HMAC-signed cookie. Generate the hash with `npm run hash-password`.
+ * One person signs in here, so there is no user table and no auth library: the
+ * password lives in the environment and the session is an HMAC-signed cookie.
+ *
+ * Two ways to set the password:
+ *   ADMIN_PASSWORD_HASH  a scrypt hash from `npm run hash-password` (preferred)
+ *   ADMIN_PASSWORD       the password itself, hashed at boot
+ *
+ * The plain variable exists because setting this up from a phone means typing
+ * into a hosting dashboard with no terminal to hash anything. It is weaker only
+ * against someone who can already read the deployment's environment — and that
+ * person can read DATABASE_URL too, so the practical gap is small.
  */
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16);
   const key = await scrypt(password, salt, 64);
   return `scrypt$${salt.toString("hex")}$${key.toString("hex")}`;
+}
+
+/** The configured password check, whichever variable supplied it. */
+export async function checkAdminPassword(password: string): Promise<boolean> {
+  const hash = process.env.ADMIN_PASSWORD_HASH;
+  if (hash) return verifyPassword(password, hash);
+
+  const plain = process.env.ADMIN_PASSWORD;
+  if (!plain) return false;
+  const a = Buffer.from(password);
+  const b = Buffer.from(plain);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
@@ -75,5 +95,6 @@ export async function isSignedIn(): Promise<boolean> {
 
 /** Admin writes are refused outright when the deployment has no password set. */
 export function adminConfigured(): boolean {
-  return Boolean(process.env.ADMIN_PASSWORD_HASH && process.env.SESSION_SECRET);
+  const hasPassword = Boolean(process.env.ADMIN_PASSWORD_HASH || process.env.ADMIN_PASSWORD);
+  return hasPassword && Boolean(process.env.SESSION_SECRET);
 }

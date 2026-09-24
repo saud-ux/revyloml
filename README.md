@@ -80,13 +80,22 @@ a reason ("no audio file yet") rather than pretending.
 
 ## Admin and auth
 
-One person signs in, so there is no user table and no auth library: a scrypt
-hash of the password lives in `ADMIN_PASSWORD_HASH` and the session is an
-HMAC-signed, `httpOnly` cookie.
+One person signs in, so there is no user table and no auth library: the password
+lives in the environment and the session is an HMAC-signed, `httpOnly` cookie.
 
-```bash
-npm run hash-password -- "your password"   # prints ADMIN_PASSWORD_HASH
-```
+Set **one** of these:
+
+- `ADMIN_PASSWORD` — the password itself, hashed at boot. No terminal needed,
+  which is the point: this can be set up entirely from a hosting dashboard.
+- `ADMIN_PASSWORD_HASH` — a scrypt hash, and it wins if both are set:
+
+  ```bash
+  npm run hash-password -- "your password"
+  ```
+
+The plain variable is weaker only against someone who can already read the
+deployment's environment — and they can read `DATABASE_URL` too, so the
+practical gap is small.
 
 The admin layout redirects unauthenticated visitors, **and every server action
 re-checks the session independently** — a server action is its own HTTP
@@ -103,7 +112,8 @@ so pinning runs in a transaction — the unpin and the pin must not be seen apar
 
 `render.yaml` is a Blueprint: **New > Blueprint**, point it at this repo. It
 creates the web service and Postgres, wires `DATABASE_URL` and generates
-`SESSION_SECRET`. You supply `ADMIN_PASSWORD_HASH` when prompted.
+`SESSION_SECRET`. Render prompts you for `ADMIN_PASSWORD` — type the password
+you want and nothing else is needed.
 
 One thing worth knowing before you click: **the disk is not optional.** Uploaded
 audio lives on it, and Render wipes the container filesystem on every deploy, so
