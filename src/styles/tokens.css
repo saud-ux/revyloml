@@ -1,0 +1,59 @@
+/* revyloml — Direction B "Signal"
+   Single source of truth for the design system. Every value here comes from the
+   "Direction B · style" artboard on the design canvas. Change it here, nowhere else. */
+
+:root {
+  /* surfaces — four steps of near-black, no gradients on chrome */
+  --bg: #0a0a0a;
+  --s1: #141414;      /* cards, nav, mini player */
+  --s2: #1e1e1e;      /* inputs, active row, hover */
+  --s3: #282828;      /* progress track, pressed */
+  --line: #1f1f1f;    /* hairlines */
+  --line-2: #2a2a2a;  /* input + button borders */
+
+  /* text — contrast measured against --bg */
+  --t1: #ffffff;      /* titles          21.0:1 */
+  --t2: #a7a7a7;      /* body, labels     8.9:1 */
+  --t3: #7d7d7d;      /* meta, captions   4.8:1 */
+
+  /* the one accent: play, progress, active state, focus ring. nothing else. */
+  --accent: #1db954;
+  --on-accent: #06130b;
+  --danger: #f4636a;
+
+  /* radii — B tops out at 12, there is no pill */
+  --r-chip: 4px;
+  --r-cover: 6px;
+  --r-ctl: 8px;       /* buttons, inputs, icon buttons */
+  --r-card: 12px;
+
+  /* spacing, 4-pt base */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+
+  /* type */
+  --font: var(--font-plex), "IBM Plex Sans Arabic", system-ui, -apple-system, sans-serif;
+
+  /* motion — linear and short; nothing bounces */
+  --ease: linear;
+  --t-press: 120ms;
+  --t-hover: 180ms;
+
+  /* chrome */
+  --gutter: 16px;
+  --miniplayer-h: 62px;
+  --tap: 44px;        /* minimum touch target */
+}
+
+@media (min-width: 900px) {
+  :root { --gutter: 40px; --miniplayer-h: 76px; }
+}
+
+/* Arabic takes no tracking and no uppercase — letter-spacing breaks the joins
+   between letters and there is no case to raise. Every tracked style in this
+   system is scoped to :lang(en) and resolves to 0 in Arabic. */
+:lang(ar) .tracked,
+:lang(ar) .eyebrow { letter-spacing: 0; text-transform: none; }
+.tracked  { letter-spacing: 0.06em; }
+.eyebrow  { letter-spacing: 0.1em; text-transform: uppercase; }
+:lang(ar) { line-height: 1.75; }
