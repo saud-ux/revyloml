@@ -5,8 +5,7 @@ import { songCount } from "@/lib/format";
 import { AdminSongList } from "@/components/admin/AdminSongList";
 import { AdminGuide } from "@/components/admin/AdminGuide";
 import { StorageWarning } from "@/components/admin/StorageWarning";
-import { BackupPanel } from "@/components/admin/BackupPanel";
-import { headers } from "next/headers";
+import { siteOrigin } from "@/lib/origin";
 import { PlusIcon, UserIcon } from "@/components/Icons";
 
 export default async function AdminPage({ params }: { params: Promise<{ lang: string }> }) {
@@ -18,9 +17,7 @@ export default async function AdminPage({ params }: { params: Promise<{ lang: st
 
   // The address the browser actually used, so the guide shows the real link
   // rather than one built from a variable that may not be set.
-  const host = (await headers()).get("host") ?? "";
-  const proto = process.env.NODE_ENV === "production" ? "https" : "http";
-  const origin = process.env.SITE_URL ?? process.env.RENDER_EXTERNAL_URL ?? (host ? `${proto}://${host}` : "");
+  const origin = await siteOrigin();
   const publicUrl = `${origin}/${locale}`;
 
   return (
@@ -53,8 +50,6 @@ export default async function AdminPage({ params }: { params: Promise<{ lang: st
           origin={origin}
         />
       )}
-
-      <BackupPanel dict={dict} locale={locale} origin={origin} />
     </>
   );
 }
