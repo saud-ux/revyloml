@@ -10,3 +10,7 @@ next-env.d.ts
 .DS_Store
 public/audio/*
 !public/audio/.gitkeep
+
+# Written by `next dev` on every start, from next.config (agentRules).
+AGENTS.md
+CLAUDE.md
