@@ -129,7 +129,12 @@ function moov(plan: Mp4Plan, mediaDuration: number, movieDuration: number, chunk
     full("hdlr", 0, 0, u32(0), tag("soun"), u32(0), u32(0), u32(0),
          new TextEncoder().encode("SoundHandler\0")),
     box("minf",
-      box("smhd", u32(0)),
+      // smhd is a FullBox: version and flags first, then balance and reserved.
+      // Written as a plain box it is four bytes short, and a strict parser
+      // fails it, then minf, then mdia, then trak, then the whole moov. The
+      // file then has no readable header at all, which is how it managed to
+      // satisfy ffprobe and play in nothing.
+      full("smhd", 0, 0, u16(0), u16(0)),
       box("dinf", full("dref", 0, 0, u32(1), full("url ", 0, 1))),
       stbl,
     ),

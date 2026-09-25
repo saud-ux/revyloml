@@ -82,22 +82,54 @@ export function PlayerProvider({
     return ordered.length === songs.length ? ordered : songs;
   }, [queue, shuffled, shuffleOrder]);
 
+  /**
+   * Which song the element is actually holding, which React state cannot say.
+   * Starts empty because the element is created without a src.
+   */
+  const loaded = useRef<string | null>(null);
+
+  /**
+   * Starts the element now, inside the tap that asked for it.
+   *
+   * This cannot go in an effect. iOS only honours play() while it is still
+   * running the handler for a real user gesture; called back after React has
+   * re-rendered it counts as autoplay and is refused, and the song sits there
+   * saying paused with nothing to explain why. That is what it did on a phone
+   * for as long as this player has existed, whatever the audio file.
+   *
+   * Setting src has to happen here for the same reason.
+   */
+  const startNow = useCallback((song: Song) => {
+    const el = audioRef.current;
+    if (!el || !song.audioUrl) return;
+    if (loaded.current !== song.slug) {
+      el.src = song.audioUrl;
+      loaded.current = song.slug;
+      el.currentTime = 0;
+    }
+    // State follows the element, through its own play and pause events.
+    void el.play().catch(() => setPlaying(false));
+  }, []);
+
   const load = useCallback((song: Song, autoplay: boolean) => {
     setCurrent(song);
     setTime(0);
     setLength(song.duration);
-    setPlaying(autoplay && Boolean(song.audioUrl));
-  }, []);
+    if (autoplay) startNow(song);
+  }, [startNow]);
 
   const playSong = useCallback(
     (song: Song) => {
       if (current?.slug === song.slug) {
-        setPlaying((p) => !p);
+        const el = audioRef.current;
+        if (!el) return;
+        if (el.paused) startNow(song);
+        else el.pause();
         return;
       }
       load(song, true);
     },
-    [current, load],
+    [current, load, startNow],
   );
 
   const step = useCallback(
@@ -141,9 +173,11 @@ export function PlayerProvider({
   }, [queue, current]);
 
   const toggle = useCallback(() => {
-    if (!playable) return;
-    setPlaying((p) => !p);
-  }, [playable]);
+    const el = audioRef.current;
+    if (!el || !current?.audioUrl) return;
+    if (el.paused) startNow(current);
+    else el.pause();
+  }, [current, startNow]);
 
   const seekTo = useCallback((seconds: number) => {
     const el = audioRef.current;
@@ -151,17 +185,17 @@ export function PlayerProvider({
     setTime(seconds);
   }, []);
 
-  // Drive the element from state rather than the other way round, so every
-  // control in the tree stays in sync with one source of truth.
+  // Only for a song chosen without playing it, so the element is pointed at the
+  // right file and its length can be read. Playback itself is never started
+  // from here, for the reason given on startNow.
   useEffect(() => {
     const el = audioRef.current;
-    if (!el) return;
-    if (playing) {
-      el.play().catch(() => setPlaying(false));
-    } else {
-      el.pause();
+    if (!el || !current?.audioUrl) return;
+    if (loaded.current !== current.slug) {
+      el.src = current.audioUrl;
+      loaded.current = current.slug;
     }
-  }, [playing, current]);
+  }, [current]);
 
   /**
    * Count a play when the track actually starts from the beginning, not on
@@ -193,9 +227,11 @@ export function PlayerProvider({
   return (
     <Ctx.Provider value={value}>
       {children}
+      {/* No src here: it is set imperatively, because changing it through a
+          re-render lands after the gesture has ended and iOS then refuses to
+          play. */}
       <audio
         ref={audioRef}
-        src={current?.audioUrl ?? undefined}
         preload="metadata"
         onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
         onLoadedMetadata={(e) => {
@@ -203,8 +239,10 @@ export function PlayerProvider({
           if (Number.isFinite(d) && d > 0) setLength(d);
         }}
         onPlay={(e) => {
+          setPlaying(true);
           if (current && e.currentTarget.currentTime < 1) countPlay(current.slug);
         }}
+        onPause={() => setPlaying(false)}
         onEnded={() => step(1)}
       />
     </Ctx.Provider>
