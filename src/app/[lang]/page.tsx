@@ -60,17 +60,6 @@ export default async function HomePage({
             </span>
             {profile.bio[locale] && <p className="profile__bio">{profile.bio[locale]}</p>}
             <SocialLinks social={profile.social} />
-            <div className="profile__actions" style={{ marginBlockStart: 8 }}>
-              <ShareSheet
-                dict={dict}
-                title={profile.name[locale]}
-                label={dict.sharePage}
-                text={dict.sharePage}
-                heading={dict.sharePage}
-                buttonClass="btn btn--primary"
-              />
-              <ShuffleButton dict={dict} />
-            </div>
           </div>
         </section>
 
@@ -126,6 +115,22 @@ export default async function HomePage({
             </ul>
           </>
         )}
+
+        {/* The two buttons used to sit under the name, where they pushed the
+            first song down the screen. Down here they close the page instead:
+            you reach them after the list, which is when sharing it or hearing
+            it in a new order is the thing you actually want next. */}
+        <footer className="pagefoot">
+          {songs.length > 0 && <ShuffleButton dict={dict} />}
+          <ShareSheet
+            dict={dict}
+            title={profile.name[locale]}
+            label={dict.sharePage}
+            text={dict.sharePage}
+            heading={dict.sharePage}
+            buttonClass="btn btn--primary"
+          />
+        </footer>
       </div>
     </main>
   );

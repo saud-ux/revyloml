@@ -225,7 +225,13 @@
 .profile__name { font-size: 34px; font-weight: 800; letter-spacing: -0.4px; line-height: 1.12; }
 .profile__sub { font-size: 13px; color: var(--t3); }
 .profile__bio { font-size: 13.5px; line-height: 1.7; color: var(--t2); max-width: 40ch; }
-.profile__actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; justify-content: center; }
+/* The page's closing row: share and shuffle, after the last song. The rule
+   above the buttons separates them from the list without adding a heading. */
+.pagefoot {
+  display: flex; gap: var(--sp-2); flex-wrap: wrap; justify-content: center;
+  margin-block-start: var(--sp-6); padding-block-start: var(--sp-5);
+  border-block-start: 1px solid var(--line);
+}
 
 .featured { display: flex; align-items: center; gap: var(--sp-3); }
 .featured__head { display: flex; align-items: center; justify-content: space-between; margin-block-end: var(--sp-3); }
