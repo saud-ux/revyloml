@@ -22,7 +22,9 @@ export function MiniPlayer({ locale, dict }: { locale: Locale; dict: Dict }) {
         <Cover size={40} title={current.title[locale]} slug={current.slug} url={current.coverUrl} radius={4} />
         <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
           <span className="mini__title">{current.title[locale]}</span>
-          <span className="mini__sub">{playable ? dict.nowPlaying : dict.noAudio}</span>
+          <span className="mini__sub">
+            {!playable ? dict.noAudio : playing ? dict.nowPlaying : dict.paused}
+          </span>
         </span>
       </Link>
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>

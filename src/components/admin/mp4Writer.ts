@@ -36,6 +36,61 @@ const MATRIX = cat([
   u32(0), u32(0), u32(0x40000000),
 ]);
 
+/**
+ * Rebuilds a sound description in the form a plain MP4 requires.
+ *
+ * A QuickTime recording, which is what an iPhone produces, describes its audio
+ * with a version 1 entry that buries the decoder config inside a `wave` atom
+ * alongside some legacy siblings. An MP4 parser expects a version 0 entry with
+ * `esds` as a direct child and will not go looking in `wave` for it. Copied
+ * across verbatim the file looks fine to lenient tools and plays in nothing:
+ * the decoder never finds its configuration.
+ *
+ * So the `esds` is dug out of wherever it sits and re-housed in a clean entry.
+ */
+export function normalizeAudioEntry(
+  raw: Uint8Array,
+  channels: number,
+  sampleRate: number,
+  sampleSize: number,
+): Uint8Array<ArrayBuffer> {
+  const view = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
+  const type = String.fromCharCode(raw[4], raw[5], raw[6], raw[7]);
+  const version = view.getUint16(16);
+  // Version 1 carries four extra fields, version 2 a longer block still.
+  const childrenAt = 36 + (version === 1 ? 16 : version === 2 ? 36 : 0);
+
+  const findEsds = (from: number, to: number): Uint8Array | null => {
+    let at = from;
+    while (at + 8 <= to) {
+      const size = view.getUint32(at);
+      if (size < 8 || at + size > to) break;
+      const kind = String.fromCharCode(raw[at + 4], raw[at + 5], raw[at + 6], raw[at + 7]);
+      if (kind === "esds") return raw.subarray(at, at + size);
+      // QuickTime hides it one level down.
+      if (kind === "wave") {
+        const inner = findEsds(at + 8, at + size);
+        if (inner) return inner;
+      }
+      at += size;
+    }
+    return null;
+  };
+
+  const esds = findEsds(childrenAt, raw.length);
+  // Already the plain form, or nothing recognisable to rebuild from: leave it be.
+  if (!esds || (version === 0 && raw.length === 36 + esds.length)) return cat([raw]);
+
+  return box(type,
+    Uint8Array.of(0, 0, 0, 0, 0, 0),   // reserved
+    u16(1),                             // data reference index
+    u16(0), u16(0), u32(0),             // version, revision, vendor
+    u16(channels), u16(sampleSize || 16), u16(0), u16(0),
+    u32(sampleRate << 16),              // 16.16 fixed point
+    esds,
+  );
+}
+
 export type AudioSample = { data: Uint8Array; size: number; duration: number };
 export type EditEntry = { segmentDuration: number; mediaTime: number };
 

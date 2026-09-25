@@ -1,6 +1,6 @@
 "use client";
 
-import { writeAudioMp4, type AudioSample, type EditEntry } from "./mp4Writer";
+import { normalizeAudioEntry, writeAudioMp4, type AudioSample, type EditEntry } from "./mp4Writer";
 
 /**
  * Throws away the pictures and keeps the sound, without decoding either.
@@ -75,7 +75,14 @@ export async function remuxToAudio(file: File, bytes: ArrayBuffer): Promise<Remu
         movieTimescale: src.moov?.mvhd?.timescale ?? track.timescale,
         mediaTimescale: track.timescale,
         language: trak.mdia?.mdhd?.language ?? 0x55c4,
-        stsdEntry: new Uint8Array(bytes, entry.start, entry.size),
+        // Rebuilt rather than copied: an iPhone describes its audio the
+        // QuickTime way, which an MP4 parser cannot read.
+        stsdEntry: normalizeAudioEntry(
+          new Uint8Array(bytes, entry.start, entry.size),
+          track.audio.channel_count,
+          track.audio.sample_rate,
+          track.audio.sample_size,
+        ),
         // The edit list is what trims the encoder's priming. Dropped, the track
         // starts roughly 50 ms early on a silent run-in.
         edits: elst?.entries?.length
