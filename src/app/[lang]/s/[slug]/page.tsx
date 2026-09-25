@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProfile, getSong, listPublicSongs } from "@/lib/data";
-import { fill, isLocale, t, type Locale } from "@/lib/i18n";
+import { isLocale, t, type Locale } from "@/lib/i18n";
 import { Cover } from "@/components/Cover";
 import { SongRow } from "@/components/SongRow";
 import { SongTransport } from "@/components/SongTransport";
@@ -88,7 +88,7 @@ export default async function SongPage({ params }: { params: Params }) {
             {more.length > 0 && (
               <section>
                 <div className="section-head">
-                  <h2 className="section-title eyebrow">{fill(dict.moreBy, { name: profile.name[locale] })}</h2>
+                  <h2 className="section-title eyebrow">{dict.moreBy}</h2>
                 </div>
                 <ul>
                   {more.map((s) => (
