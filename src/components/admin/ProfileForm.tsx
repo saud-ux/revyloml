@@ -82,6 +82,33 @@ export function ProfileForm({
         <span className="field__hint">{dict.handleHint}</span>
       </label>
 
+      <fieldset className="field">
+        <legend className="field__label">{dict.socialTitle}</legend>
+        <div className="form__grid">
+          {([
+            ["instagram", "Instagram", profile.social.instagram],
+            ["tiktok", "TikTok", profile.social.tiktok],
+            ["snapchat", "Snapchat", profile.social.snapchat],
+            ["x", "X", profile.social.x],
+          ] as const).map(([name, label, value]) => (
+            <label className="field" key={name}>
+              <span className="field__label">{label}</span>
+              <input
+                className="input ltr"
+                name={name}
+                defaultValue={value}
+                inputMode="text"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="revyloml"
+              />
+            </label>
+          ))}
+        </div>
+        <p className="field__hint">{dict.socialHint}</p>
+      </fieldset>
+
       <div className="form__grid">
         <label className="field">
           <span className="field__label">{dict.nameAr}</span>

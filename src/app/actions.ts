@@ -202,12 +202,29 @@ export async function saveProfile(_prev: FormState, form: FormData): Promise<For
   const handle = String(form.get("handle") ?? "").trim().replace(/^@/, "").toLowerCase();
   if (!/^[a-z0-9._]{1,30}$/.test(handle)) return { error: "handle" };
 
+  // Stored as bare handles: a leading @ or a whole pasted profile address are
+  // both trimmed down to the name, so the link built from it always points at
+  // the right place whatever he typed.
+  const handleOf = (field: string) =>
+    String(form.get(field) ?? "")
+      .trim()
+      .replace(/^https?:\/\/[^/]+\//i, "")
+      .replace(/^@/, "")
+      .replace(/\/.*$/, "")
+      .slice(0, 40);
+
   await updateProfile({
     handle,
     name: { ar: String(form.get("nameAr") ?? "").trim(), en: String(form.get("nameEn") ?? "").trim() },
     bio: { ar: String(form.get("bioAr") ?? "").trim(), en: String(form.get("bioEn") ?? "").trim() },
     photoUrl,
     accent: /^#[0-9a-f]{6}$/i.test(String(form.get("accent"))) ? String(form.get("accent")) : "#1DB954",
+    social: {
+      instagram: handleOf("instagram"),
+      tiktok: handleOf("tiktok"),
+      snapchat: handleOf("snapchat"),
+      x: handleOf("x"),
+    },
   });
 
   revalidatePath("/", "layout");

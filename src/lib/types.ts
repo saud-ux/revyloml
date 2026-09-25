@@ -16,8 +16,19 @@ export type Song = {
   visibility: Visibility;
   pinned: boolean;
   position: number;
-  /** how many times it has been started; admin only */
+  /** how many times it has been started */
   plays: number;
+  /** who touched it last, and when, since two people share the admin */
+  updatedAt: string | null;
+  updatedBy: string;
+};
+
+/** Handles, not URLs: the address is built from them so it always points home. */
+export type Social = {
+  instagram: string;
+  tiktok: string;
+  snapchat: string;
+  x: string;
 };
 
 export type Profile = {
@@ -26,4 +37,5 @@ export type Profile = {
   bio: Localized;
   photoUrl: string | null;
   accent: string;
+  social: Social;
 };

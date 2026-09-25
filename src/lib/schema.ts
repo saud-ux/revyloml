@@ -39,6 +39,17 @@ CREATE INDEX IF NOT EXISTS songs_position_idx ON songs (position);
 -- Added after the first deploy, so it has to be safe against an existing table.
 ALTER TABLE songs ADD COLUMN IF NOT EXISTS plays integer NOT NULL DEFAULT 0;
 
+-- Where else to find him. Each is stored as the handle alone, not a URL, so the
+-- link is built here and a pasted address cannot point anywhere unexpected.
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS instagram text NOT NULL DEFAULT '';
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS tiktok    text NOT NULL DEFAULT '';
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS snapchat  text NOT NULL DEFAULT '';
+ALTER TABLE profile ADD COLUMN IF NOT EXISTS x_handle  text NOT NULL DEFAULT '';
+
+-- Two people share this admin, so a row remembers who touched it last.
+ALTER TABLE songs ADD COLUMN IF NOT EXISTS updated_at timestamptz;
+ALTER TABLE songs ADD COLUMN IF NOT EXISTS updated_by text NOT NULL DEFAULT '';
+
 -- At most one pinned song: the featured slot on the home page holds one card.
 CREATE UNIQUE INDEX IF NOT EXISTS songs_one_pinned_idx ON songs (pinned) WHERE pinned;
 `;

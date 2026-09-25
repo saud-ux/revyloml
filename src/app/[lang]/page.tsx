@@ -2,6 +2,7 @@ import { getFeaturedSong, getProfile, listPublicSongs, type SongOrder } from "@/
 import { fill, isLocale, t, type Locale } from "@/lib/i18n";
 import { notFound } from "next/navigation";
 import { Avatar, Cover } from "@/components/Cover";
+import { SocialLinks } from "@/components/SocialLinks";
 import { PlayControl } from "@/components/PlayControl";
 import { SongRow } from "@/components/SongRow";
 import { ShareSheet } from "@/components/ShareSheet";
@@ -58,6 +59,7 @@ export default async function HomePage({
               <span>{fill(dict.nSongs, { n: songs.length })}</span>
             </span>
             {profile.bio[locale] && <p className="profile__bio">{profile.bio[locale]}</p>}
+            <SocialLinks social={profile.social} />
             <div className="profile__actions" style={{ marginBlockStart: 8 }}>
               <ShareSheet
                 dict={dict}
@@ -91,7 +93,10 @@ export default async function HomePage({
                   <a href={`/${locale}/s/${featured.slug}`} style={{ flexGrow: 1, minWidth: 0 }}>
                     <span style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                       <span className="featured__title">{featured.title[locale]}</span>
-                      <span className="row__meta">{monthYear(featured.releasedAt, locale)}</span>
+                      <span className="row__meta">
+                        {monthYear(featured.releasedAt, locale)}
+                        {featured.plays >= 5 && <> · {fill(dict.plays, { n: featured.plays })}</>}
+                      </span>
                     </span>
                   </a>
                   <PlayControl song={featured} dict={dict} title={featured.title[locale]} glyph={20} />

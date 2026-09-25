@@ -1,7 +1,19 @@
 {
   "handle": "revyloml",
-  "name": { "ar": "يزن", "en": "Yazan" },
-  "bio": { "ar": "", "en": "" },
+  "name": {
+    "ar": "يزن",
+    "en": "Yazan"
+  },
+  "bio": {
+    "ar": "",
+    "en": ""
+  },
   "photoUrl": null,
-  "accent": "#1DB954"
+  "accent": "#1DB954",
+  "social": {
+    "instagram": "",
+    "tiktok": "",
+    "snapchat": "",
+    "x": ""
+  }
 }

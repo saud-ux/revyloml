@@ -39,6 +39,16 @@ export const ShuffleIcon = ({ size = 19 }: P) =>
   stroke('<path d="M4 7h3.4l9.2 10H20"/><path d="M4 17h3.4l2.3-2.6"/><path d="M14.3 9.6 16.6 7H20"/><path d="M17.4 4.4 20 7l-2.6 2.6"/><path d="M17.4 14.4 20 17l-2.6 2.6"/>', size);
 export const RepeatIcon = ({ size = 19 }: P) =>
   stroke('<path d="M7 7h9a4 4 0 0 1 4 4v.6"/><path d="M17 17H8a4 4 0 0 1-4-4v-.6"/><path d="M9.6 4.4 7 7l2.6 2.6"/><path d="M14.4 19.6 17 17l-2.6-2.6"/>', size);
+export const InstagramIcon = ({ size = 18 }: P) =>
+  stroke('<rect x="3.6" y="3.6" width="16.8" height="16.8" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.1" cy="6.9" r="1.1" fill="currentColor"/>', size);
+export const TiktokIcon = ({ size = 18 }: P) =>
+  stroke('<path d="M14.4 3.6v10.2a3.9 3.9 0 1 1-3.9-3.9"/><path d="M14.4 6.3a4.8 4.8 0 0 0 4.5 3.2"/>', size);
+export const SnapchatIcon = ({ size = 18 }: P) =>
+  stroke('<path d="M12 3.8c2.5 0 4 1.8 4 4.2 0 1 .1 1.9-.2 2.5.5.3 1 .2 1.5.1.5 1-.6 1.4-1.4 1.8.4 1.5 1.8 2.6 3.1 2.9.2.6-1.4 1.2-2.6 1.3-.2.4-.2 1-.5 1.1-.8.2-1.9-.4-3 .1-.9.4-1.5 1.4-2.9 1.4s-2-1-2.9-1.4c-1.1-.5-2.2.1-3-.1-.3-.1-.3-.7-.5-1.1-1.2-.1-2.8-.7-2.6-1.3 1.3-.3 2.7-1.4 3.1-2.9-.8-.4-1.9-.8-1.4-1.8.5.1 1 .2 1.5-.1-.3-.6-.2-1.5-.2-2.5 0-2.4 1.5-4.2 4-4.2z"/>', size);
+export const XIcon = ({ size = 18 }: P) =>
+  stroke('<path d="M4.4 4.4 19.6 19.6"/><path d="M19.6 4.4 4.4 19.6"/>', size, undefined, 1.9);
+export const QrIcon = ({ size = 18 }: P) =>
+  stroke('<rect x="3.8" y="3.8" width="6" height="6" rx="1.2"/><rect x="14.2" y="3.8" width="6" height="6" rx="1.2"/><rect x="3.8" y="14.2" width="6" height="6" rx="1.2"/><path d="M14.2 14.2h2.6v2.6h-2.6zM17.6 17.6h2.6v2.6h-2.6z"/>', size);
 export const SortIcon = ({ size = 14 }: P) => stroke('<path d="M6 7h12M8 12h8M10.5 17h3"/>', size);
 export const NoteIcon = ({ size = 28 }: P) =>
   stroke('<path d="M9.4 17.6V6.3l9.8-2v11"/><circle cx="6.9" cy="17.6" r="2.5"/><circle cx="16.7" cy="15.3" r="2.5"/>', size);

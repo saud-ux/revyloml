@@ -420,3 +420,14 @@
   background: var(--accent);
   transition: width 120ms linear;
 }
+
+/* Where else to find him, under the name on the profile. */
+.social { display: flex; gap: 6px; margin-block-start: 10px; }
+
+.social__link {
+  display: grid; place-items: center;
+  inline-size: var(--tap); block-size: var(--tap);
+  border-radius: 999px; color: var(--t2);
+}
+
+.social__link:hover { color: var(--t1); background: var(--s2); }

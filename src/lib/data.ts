@@ -16,6 +16,7 @@ type Row = {
   slug: string; title_ar: string; title_en: string; released_at: Date | string;
   duration: number; audio_url: string | null; cover_url: string | null;
   lyrics: string; visibility: Visibility; pinned: boolean; position: number; plays: number;
+  updated_at: Date | string | null; updated_by: string;
 };
 
 const toSong = (r: Row): Song => ({
@@ -30,6 +31,10 @@ const toSong = (r: Row): Song => ({
   pinned: r.pinned,
   position: r.position,
   plays: r.plays ?? 0,
+  updatedAt: r.updated_at
+    ? (r.updated_at instanceof Date ? r.updated_at.toISOString() : String(r.updated_at))
+    : null,
+  updatedBy: r.updated_by ?? "",
 });
 
 const seedSongs = songsSeed as Song[];
@@ -37,7 +42,8 @@ const seedProfile = profileSeed as Profile;
 const byPosition = (a: Song, b: Song) => a.position - b.position;
 
 const COLUMNS = `slug, title_ar, title_en, released_at, duration, audio_url,
-                 cover_url, lyrics, visibility, pinned, position, plays`;
+                 cover_url, lyrics, visibility, pinned, position, plays,
+                 updated_at, updated_by`;
 const SELECT = `SELECT ${COLUMNS} FROM songs`;
 
 // ---------------------------------------------------------------- reads
@@ -92,7 +98,9 @@ export async function getProfile(): Promise<Profile> {
   const rows = await query<{
     handle: string; name_ar: string; name_en: string; bio_ar: string;
     bio_en: string; photo_url: string | null; accent: string;
-  }>(`SELECT handle, name_ar, name_en, bio_ar, bio_en, photo_url, accent FROM profile WHERE id = 1`);
+    instagram: string; tiktok: string; snapchat: string; x_handle: string;
+  }>(`SELECT handle, name_ar, name_en, bio_ar, bio_en, photo_url, accent,
+             instagram, tiktok, snapchat, x_handle FROM profile WHERE id = 1`);
   const r = rows[0];
   if (!r) return seedProfile;
   return {
@@ -101,6 +109,12 @@ export async function getProfile(): Promise<Profile> {
     bio: { ar: r.bio_ar, en: r.bio_en },
     photoUrl: r.photo_url,
     accent: r.accent,
+    social: {
+      instagram: r.instagram ?? "",
+      tiktok: r.tiktok ?? "",
+      snapchat: r.snapchat ?? "",
+      x: r.x_handle ?? "",
+    },
   };
 }
 
@@ -192,8 +206,10 @@ export async function updateProfile(p: Profile): Promise<void> {
   requireDatabase();
   await query(
     `UPDATE profile SET handle=$1, name_ar=$2, name_en=$3, bio_ar=$4, bio_en=$5,
-            photo_url=$6, accent=$7 WHERE id = 1`,
-    [p.handle, p.name.ar, p.name.en, p.bio.ar, p.bio.en, p.photoUrl, p.accent],
+            photo_url=$6, accent=$7, instagram=$8, tiktok=$9, snapchat=$10,
+            x_handle=$11 WHERE id = 1`,
+    [p.handle, p.name.ar, p.name.en, p.bio.ar, p.bio.en, p.photoUrl, p.accent,
+     p.social.instagram, p.social.tiktok, p.social.snapchat, p.social.x],
   );
 }
 

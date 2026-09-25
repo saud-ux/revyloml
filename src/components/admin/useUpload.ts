@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { requestUpload } from "@/app/actions";
 import { prepareAudio, type Stage } from "./prepareAudio";
+import { prepareImage } from "./prepareImage";
 
 /**
  * One file slot on an admin form.
@@ -85,6 +86,10 @@ export function useUpload(kind: "audio" | "image", prefix: "audio" | "cover" | "
         );
         if (!ready.ok) return fail(ready.error);
         ({ file, seconds, converted } = ready);
+      } else {
+        const ready = await prepareImage(picked);
+        file = ready.file;
+        converted = ready.shrunk;
       }
 
       const sized = { ...base, sent: file.size, seconds, converted };
