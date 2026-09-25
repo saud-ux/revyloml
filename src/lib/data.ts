@@ -136,25 +136,26 @@ export type SongInput = {
   visibility: Visibility;
 };
 
-export async function createSong(slug: string, input: SongInput): Promise<void> {
+export async function createSong(slug: string, input: SongInput, by = ""): Promise<void> {
   requireDatabase();
   await query(
     `INSERT INTO songs (slug, title_ar, title_en, released_at, duration, audio_url,
-                        cover_url, lyrics, visibility, position)
+                        cover_url, lyrics, visibility, position, updated_at, updated_by)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,
-             COALESCE((SELECT MIN(position) - 1 FROM songs), 0))`,
+             COALESCE((SELECT MIN(position) - 1 FROM songs), 0), now(), $10)`,
     [slug, input.title.ar, input.title.en, input.releasedAt, input.duration,
-     input.audioUrl, input.coverUrl, input.lyrics, input.visibility],
+     input.audioUrl, input.coverUrl, input.lyrics, input.visibility, by],
   );
 }
 
-export async function updateSong(slug: string, input: SongInput): Promise<void> {
+export async function updateSong(slug: string, input: SongInput, by = ""): Promise<void> {
   requireDatabase();
   await query(
     `UPDATE songs SET title_ar=$2, title_en=$3, released_at=$4, duration=$5,
-            audio_url=$6, cover_url=$7, lyrics=$8, visibility=$9 WHERE slug=$1`,
+            audio_url=$6, cover_url=$7, lyrics=$8, visibility=$9,
+            updated_at=now(), updated_by=$10 WHERE slug=$1`,
     [slug, input.title.ar, input.title.en, input.releasedAt, input.duration,
-     input.audioUrl, input.coverUrl, input.lyrics, input.visibility],
+     input.audioUrl, input.coverUrl, input.lyrics, input.visibility, by],
   );
 }
 
@@ -164,22 +165,28 @@ export async function deleteSong(slug: string): Promise<Song | null> {
   return rows[0] ? toSong(rows[0]) : null;
 }
 
-export async function setVisibility(slug: string, visibility: Visibility): Promise<void> {
+export async function setVisibility(slug: string, visibility: Visibility, by = ""): Promise<void> {
   requireDatabase();
-  await query(`UPDATE songs SET visibility = $2 WHERE slug = $1`, [slug, visibility]);
+  await query(
+    `UPDATE songs SET visibility = $2, updated_at = now(), updated_by = $3 WHERE slug = $1`,
+    [slug, visibility, by],
+  );
 }
 
 /**
  * Pinning is exclusive — the home page has one featured slot, and a partial
  * unique index in the schema enforces it, so the unpin has to land first.
  */
-export async function setPinned(slug: string, pinned: boolean): Promise<void> {
+export async function setPinned(slug: string, pinned: boolean, by = ""): Promise<void> {
   requireDatabase();
   // One transaction, one connection: a partial unique index enforces "at most
   // one pinned song", so the unpin and the pin must not be seen apart.
   await transaction(async (q) => {
     if (pinned) await q(`UPDATE songs SET pinned = false WHERE pinned`);
-    await q(`UPDATE songs SET pinned = $2 WHERE slug = $1`, [slug, pinned]);
+    await q(
+      `UPDATE songs SET pinned = $2, updated_at = now(), updated_by = $3 WHERE slug = $1`,
+      [slug, pinned, by],
+    );
   });
 }
 

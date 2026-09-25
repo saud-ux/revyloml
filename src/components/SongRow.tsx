@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePlayer } from "@/player/PlayerProvider";
 import { Cover } from "./Cover";
 import { PauseIcon, PlayIcon } from "./Icons";
-import { duration, monthYear } from "@/lib/format";
+import { duration, monthYear, playCount } from "@/lib/format";
 import type { Song } from "@/lib/types";
-import { fill, type Locale, type Dict } from "@/lib/i18n";
+import type { Locale, Dict } from "@/lib/i18n";
 
 /**
  * The row is a link to the song page; the play control inside it is a button
@@ -25,7 +25,7 @@ export function SongRow({ song, locale, dict }: { song: Song; locale: Locale; di
           <span className="row__title">{song.title[locale]}</span>
           <span className="row__meta">
             {monthYear(song.releasedAt, locale)}
-            {song.plays >= 5 && <> · {fill(dict.plays, { n: song.plays })}</>}
+            {song.plays >= 5 && <> · {playCount(song.plays, locale)}</>}
           </span>
         </Link>
         {active && (

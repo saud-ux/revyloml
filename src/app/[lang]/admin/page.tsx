@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { listAllSongs } from "@/lib/data";
 import { fill, isLocale, t, type Locale } from "@/lib/i18n";
+import { songCount } from "@/lib/format";
 import { AdminSongList } from "@/components/admin/AdminSongList";
 import { AdminGuide } from "@/components/admin/AdminGuide";
 import { StorageWarning } from "@/components/admin/StorageWarning";
 import { BackupPanel } from "@/components/admin/BackupPanel";
+import { QrPanel } from "@/components/admin/QrPanel";
 import { headers } from "next/headers";
 import { PlusIcon, UserIcon } from "@/components/Icons";
 
@@ -29,7 +31,7 @@ export default async function AdminPage({ params }: { params: Promise<{ lang: st
       <div className="admin-head">
         <div>
           <h1 className="admin-title">{dict.yourSongs}</h1>
-          <p className="row__meta">{fill(dict.total, { n: songs.length, h: hiddenCount })}</p>
+          <p className="row__meta">{fill(dict.total, { n: songCount(songs.length, locale), h: hiddenCount })}</p>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Link href={`/${locale}/admin/profile`} className="btn btn--secondary">
@@ -52,6 +54,8 @@ export default async function AdminPage({ params }: { params: Promise<{ lang: st
           origin={origin}
         />
       )}
+
+      <QrPanel url={publicUrl} dict={dict} />
 
       <BackupPanel dict={dict} locale={locale} origin={origin} />
     </>

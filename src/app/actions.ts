@@ -6,7 +6,7 @@ import {
   createSong, deleteSong, getSong, newSlug, reorderSongs, setPinned,
   setVisibility, updateProfile, updateSong, type SongInput,
 } from "@/lib/data";
-import { adminConfigured, checkAdminPassword, createSession, destroySession, isSignedIn } from "@/lib/auth";
+import { adminConfigured, checkAdminPassword, createSession, currentAdmin, destroySession } from "@/lib/auth";
 import { checkLoginAttempt, clearLoginAttempts } from "@/lib/ratelimit";
 import { headers } from "next/headers";
 import { createUploadTicket, deleteUpload, isOwnUpload, saveUpload, type Ticket } from "@/lib/storage";
@@ -18,8 +18,10 @@ import type { Visibility } from "@/lib/types";
  * but a server action is its own HTTP endpoint — guarding only the page that
  * renders the form would leave the endpoint open.
  */
-async function requireAdmin(): Promise<void> {
-  if (!(await isSignedIn())) throw new Error("Not signed in");
+async function requireAdmin(): Promise<string> {
+  const who = await currentAdmin();
+  if (!who) throw new Error("Not signed in");
+  return who;
 }
 
 function localeFrom(value: FormDataEntryValue | null): Locale {
@@ -49,13 +51,14 @@ export async function signIn(_prev: FormState, form: FormData): Promise<FormStat
   const limit = checkLoginAttempt(ip);
   if (!limit.allowed) return { error: "rate", retryAfterSeconds: limit.retryAfterSeconds };
 
-  if (!(await checkAdminPassword(password))) {
+  const who = await checkAdminPassword(password);
+  if (!who) {
     // One message for a wrong password and for a missing one: nothing to probe.
     return { error: "wrong" };
   }
 
   clearLoginAttempts(ip);
-  await createSession();
+  await createSession(who);
   redirect(`/${locale}/admin`);
 }
 
@@ -132,7 +135,7 @@ async function readSongForm(form: FormData, existingAudio: string | null, existi
 }
 
 export async function saveSong(_prev: FormState, form: FormData): Promise<FormState> {
-  await requireAdmin();
+  const who = await requireAdmin();
   const locale = localeFrom(form.get("locale"));
   const slug = String(form.get("slug") ?? "");
   const existing = slug ? await getSong(slug) : null;
@@ -140,8 +143,8 @@ export async function saveSong(_prev: FormState, form: FormData): Promise<FormSt
   const result = await readSongForm(form, existing?.audioUrl ?? null, existing?.coverUrl ?? null);
   if ("error" in result) return { error: result.error };
 
-  if (existing) await updateSong(slug, result.input);
-  else await createSong(newSlug(), result.input);
+  if (existing) await updateSong(slug, result.input, who);
+  else await createSong(newSlug(), result.input, who);
 
   revalidatePath("/", "layout");
   redirect(`/${locale}/admin`);
@@ -158,14 +161,14 @@ export async function removeSong(slug: string): Promise<void> {
 }
 
 export async function toggleVisibility(slug: string, visibility: Visibility): Promise<void> {
-  await requireAdmin();
-  await setVisibility(slug, visibility === "hidden" ? "hidden" : "public");
+  const who = await requireAdmin();
+  await setVisibility(slug, visibility === "hidden" ? "hidden" : "public", who);
   revalidatePath("/", "layout");
 }
 
 export async function togglePinned(slug: string, pinned: boolean): Promise<void> {
-  await requireAdmin();
-  await setPinned(slug, pinned);
+  const who = await requireAdmin();
+  await setPinned(slug, pinned, who);
   revalidatePath("/", "layout");
 }
 

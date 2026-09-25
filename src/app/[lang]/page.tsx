@@ -10,7 +10,7 @@ import { LangToggle } from "@/components/LangToggle";
 import { NoteIcon, SortIcon } from "@/components/Icons";
 import { ShuffleButton } from "@/components/ShuffleButton";
 import Link from "next/link";
-import { duration, monthYear } from "@/lib/format";
+import { duration, monthYear, playCount, songCount } from "@/lib/format";
 
 export default async function HomePage({
   params,
@@ -56,7 +56,7 @@ export default async function HomePage({
             <span className="profile__sub">
               <span className="ltr">@{profile.handle}</span>
               {" · "}
-              <span>{fill(dict.nSongs, { n: songs.length })}</span>
+              <span>{songCount(songs.length, locale)}</span>
             </span>
             {profile.bio[locale] && <p className="profile__bio">{profile.bio[locale]}</p>}
             <SocialLinks social={profile.social} />
@@ -95,7 +95,7 @@ export default async function HomePage({
                       <span className="featured__title">{featured.title[locale]}</span>
                       <span className="row__meta">
                         {monthYear(featured.releasedAt, locale)}
-                        {featured.plays >= 5 && <> · {fill(dict.plays, { n: featured.plays })}</>}
+                        {featured.plays >= 5 && <> · {playCount(featured.plays, locale)}</>}
                       </span>
                     </span>
                   </a>

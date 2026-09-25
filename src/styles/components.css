@@ -431,3 +431,18 @@
 }
 
 .social__link:hover { color: var(--t1); background: var(--s2); }
+
+/* The scannable code, on its own light tile so a scanner has the contrast it
+   needs against a page that is otherwise entirely dark. */
+.qr {
+  inline-size: fit-content;
+  padding: 10px;
+  border-radius: var(--r-md);
+  background: #fff;
+  margin-block: var(--sp-3) var(--sp-4);
+}
+
+.qr img { display: block; inline-size: 168px; block-size: 168px; }
+
+/* Who was here last, under the song's own details. */
+.admin-row__by { display: block; margin-block-start: 3px; color: var(--t3); font-size: 12px; }

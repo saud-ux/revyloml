@@ -22,7 +22,7 @@ import {
   toggleVisibility,
 } from "@/app/actions";
 import { copyText } from "@/lib/clipboard";
-import { duration, monthYear } from "@/lib/format";
+import { ago, duration, monthYear, playCount } from "@/lib/format";
 import { fill, type Dict, type Locale } from "@/lib/i18n";
 import type { Song } from "@/lib/types";
 
@@ -212,9 +212,19 @@ export function AdminSongList({
                   <span className="num">{duration(song.duration)}</span>
                   {" · "}
                   <span className="num">
-                    {fill(dict.plays, { n: song.plays })}
+                    {playCount(song.plays, locale)}
                   </span>
                 </span>
+                {/* Two people share this admin, so the row says who was here
+                    last. Without it the only way to tell is to ask. */}
+                {song.updatedBy && song.updatedAt && (
+                  <span className="row__meta admin-row__by">
+                    {fill(dict.lastEditedBy, {
+                      who: song.updatedBy,
+                      when: ago(song.updatedAt, locale),
+                    })}
+                  </span>
+                )}
               </span>
 
               <span
