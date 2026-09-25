@@ -9,29 +9,21 @@ const stroke = (d: string, size: number, className?: string, width = 1.6) => (
   />
 );
 
-const solid = (d: string, size: number, className?: string) => (
-  <svg
-    width={size} height={size} viewBox="0 0 24 24" fill="currentColor"
-    aria-hidden className={className} style={{ display: "block", flexShrink: 0 }}
-    dangerouslySetInnerHTML={{ __html: d }}
-  />
-);
-
 /*
- * Play and pause are filled, not outlined like the rest.
+ * Play and pause are outlined, like the rest of the set. Pause was two
+ * outlined bars 3.6 units wide with a 2 unit stroke, which left a 1 unit hole
+ * and put the ink of the two bars a tenth of a unit INTO each other: on a
+ * phone it read as one green block with two scratches in it.
  *
- * They were outlined, and pause came out as one block with two hairlines in
- * it. The bars are 3.6 units wide on a 24 unit canvas, so a 2 unit stroke
- * leaves a 1.6 unit hole — one pixel at the size this is drawn — and the
- * strokes of the two bars met in the middle with a tenth of a unit to spare.
- * No outline survives at 15px. Filled, both glyphs read at a glance, and they
- * match each other inside the button that swaps between them.
+ * The bars are wider and further apart now — 2.2 units of hole and 2 units of
+ * clear air between the ink, which is four device pixels each on a phone. The
+ * shape is the same one everybody draws; it just has room to be seen.
  *
  * The play triangle never mirrors in RTL.
  */
-export const PlayIcon = ({ size = 20 }: P) => solid('<path d="M7.8 5 19.2 12 7.8 19z"/>', size);
+export const PlayIcon = ({ size = 20 }: P) => stroke('<path d="M8 5.2 19 12 8 18.8z"/>', size, undefined, 2);
 export const PauseIcon = ({ size = 20 }: P) =>
-  solid('<rect x="7.2" y="5" width="3.3" height="14" rx="1.1"/><rect x="13.5" y="5" width="3.3" height="14" rx="1.1"/>', size);
+  stroke('<rect x="5.8" y="5.2" width="4.2" height="13.6" rx="0.8"/><rect x="14" y="5.2" width="4.2" height="13.6" rx="0.8"/>', size, undefined, 2);
 
 /* Directional icons: `.flip` is applied by the caller under :dir(rtl). */
 export const PrevIcon = ({ size = 24, className }: P) => (
