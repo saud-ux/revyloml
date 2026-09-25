@@ -1,4 +1,4 @@
-import { coverLetter, coverTint } from "@/lib/format";
+import { coverGradient, coverLetter } from "@/lib/format";
 
 /**
  * A song cover. With no uploaded artwork it falls back to the generated tile:
@@ -17,7 +17,7 @@ export function Cover({
   const style: React.CSSProperties = {
     inlineSize: size,
     blockSize: size,
-    background: url ? undefined : coverTint(slug),
+    background: url ? undefined : coverGradient(slug),
     borderRadius: radius,
   };
   return (
@@ -26,7 +26,7 @@ export function Cover({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt="" />
       ) : (
-        <span className="cover__letter" style={{ fontSize: Math.round(size * 0.4) }}>
+        <span className="cover__letter" style={{ fontSize: Math.round(size * 0.46) }}>
           {coverLetter(title)}
         </span>
       )}

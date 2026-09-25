@@ -39,7 +39,7 @@ export default async function HomePage({
   const rest = songs.filter((s) => s.slug !== featured?.slug);
 
   return (
-    <main className="page">
+    <main className="page glow">
       <div className="wrap">
         <header className="topbar">
           <span className="brand tracked">revyloml</span>

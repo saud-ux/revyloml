@@ -48,7 +48,7 @@ export default async function SongPage({ params }: { params: Params }) {
   const lyricLines = song.lyrics.split("\n").filter(Boolean);
 
   return (
-    <main className="page">
+    <main className="page glow">
       <div className="wrap">
         <header className="topbar">
           <Link href={`/${locale}`} className="iconbtn" aria-label={dict.back}>

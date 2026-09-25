@@ -20,16 +20,32 @@ export function monthYear(iso: string, locale: Locale): string {
   }).format(d);
 }
 
-/**
- * The auto-generated fallback cover: a deterministic tint plus the title's first
- * character. Same title always gets the same tile, in any language.
- */
-const TINTS = ["#2e2a33", "#332a24", "#243230", "#33262a", "#25293a", "#332e22"];
-
-export function coverTint(key: string): string {
+/** Stable hash, so the same song always looks the same everywhere it appears. */
+function hashOf(key: string): number {
   let h = 0;
   for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
-  return TINTS[h % TINTS.length];
+  return h;
+}
+
+/**
+ * The cover a song gets when it has no artwork.
+ *
+ * It used to be one flat near-black tint with a letter almost invisible on it,
+ * which on a page of them read as a column of empty boxes. Two hues a little
+ * apart, running corner to corner, give each song something of its own while
+ * staying dark enough to sit in this page without shouting.
+ */
+export function coverGradient(key: string): string {
+  const h = hashOf(key);
+  const hue = h % 360;
+  const second = (hue + 28 + (h % 24)) % 360;
+  return `linear-gradient(145deg, hsl(${hue} 34% 26%), hsl(${second} 40% 15%))`;
+}
+
+/** A flat colour for a song, used by the link preview images. */
+export function coverTint(key: string): string {
+  const h = hashOf(key);
+  return `hsl(${h % 360} 40% 42%)`;
 }
 
 export function coverLetter(title: string): string {

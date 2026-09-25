@@ -140,7 +140,8 @@ export async function createSong(slug: string, input: SongInput, by = ""): Promi
   requireDatabase();
   await query(
     `INSERT INTO songs (slug, title_ar, title_en, released_at, duration, audio_url,
-                        cover_url, lyrics, visibility, position, updated_at, updated_by)
+                        cover_url, lyrics, visibility, position, updated_at,
+                        updated_by)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,
              COALESCE((SELECT MIN(position) - 1 FROM songs), 0), now(), $10)`,
     [slug, input.title.ar, input.title.en, input.releasedAt, input.duration,

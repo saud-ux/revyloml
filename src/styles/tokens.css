@@ -54,6 +54,9 @@
    system is scoped to :lang(en) and resolves to 0 in Arabic. */
 :lang(ar) .tracked,
 :lang(ar) .eyebrow { letter-spacing: 0; text-transform: none; }
+/* The same applies to the headings, which are tightened for Latin letterforms
+   and would be pulled apart at the joins in Arabic. */
+:lang(ar) .profile__name, :lang(ar) .song-title { letter-spacing: 0; }
 .tracked  { letter-spacing: 0.06em; }
 .eyebrow  { letter-spacing: 0.1em; text-transform: uppercase; }
 :lang(ar) { line-height: 1.75; }

@@ -63,7 +63,7 @@
   position: relative; overflow: hidden; flex-shrink: 0;
   border-radius: var(--r-cover); display: grid; place-items: center;
 }
-.cover__letter { font-weight: 700; color: rgb(255 255 255 / 0.1); line-height: 1; user-select: none; }
+.cover__letter { font-weight: 800; color: rgb(255 255 255 / 0.28); line-height: 1; user-select: none; }
 
 /* Positioned rather than laid out. As a grid item the image ignored its 100%
    height, kept its own proportions, overflowed the square and was clipped from
@@ -205,7 +205,7 @@
 
 /* ---------------------------------------------------------------- song page */
 .song-art { display: flex; justify-content: center; padding-block: var(--sp-3) var(--sp-5); }
-.song-title { font-size: 26px; font-weight: 700; line-height: 1.2; unicode-bidi: isolate; }
+.song-title { font-size: 32px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.15; unicode-bidi: isolate; }
 .song-meta { font-size: 12.5px; color: var(--t3); }
 .transport { display: flex; align-items: center; justify-content: center; gap: var(--sp-5); padding-block: var(--sp-1) var(--sp-5); }
 .lyrics { border: 1px solid var(--line); border-radius: var(--r-card); overflow: hidden; }
@@ -216,26 +216,26 @@
 
 @media (min-width: 900px) {
   .song-layout { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: var(--sp-10); align-items: start; }
-  .song-title { font-size: 36px; }
+  .song-title { font-size: 44px; }
 }
 
 /* ---------------------------------------------------------------- profile */
 .profile { display: flex; flex-direction: column; align-items: center; gap: 10px;
            text-align: center; padding-block: var(--sp-4) var(--sp-5); }
-.profile__name { font-size: 24px; font-weight: 700; }
+.profile__name { font-size: 34px; font-weight: 800; letter-spacing: -0.4px; line-height: 1.12; }
 .profile__sub { font-size: 13px; color: var(--t3); }
 .profile__bio { font-size: 13.5px; line-height: 1.7; color: var(--t2); max-width: 40ch; }
 .profile__actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; justify-content: center; }
 
 .featured { display: flex; align-items: center; gap: var(--sp-3); }
 .featured__head { display: flex; align-items: center; justify-content: space-between; margin-block-end: var(--sp-3); }
-.featured__title { font-size: 18px; font-weight: 700; line-height: 1.25; unicode-bidi: isolate; }
+.featured__title { font-size: 21px; font-weight: 800; line-height: 1.22; unicode-bidi: isolate; }
 
 @media (min-width: 900px) {
   .profile { flex-direction: row; text-align: start; align-items: center; gap: var(--sp-6); }
   .profile__col { display: flex; flex-direction: column; gap: var(--sp-2); align-items: flex-start; }
-  .profile__name { font-size: 32px; }
-  .featured__title { font-size: 28px; }
+  .profile__name { font-size: 46px; }
+  .featured__title { font-size: 30px; }
 }
 
 /* The cover slot is the play control. */
@@ -446,3 +446,73 @@
 
 /* Who was here last, under the song's own details. */
 .admin-row__by { display: block; margin-block-start: 3px; color: var(--t3); font-size: 12px; }
+
+/* ------------------------------------------------------------------ glow */
+
+/*
+ * The site's green, bleeding down from the top of the page.
+ *
+ * It was briefly taken from each cover, the way a streaming app does it, and
+ * that was the wrong call for this site: one artist, one colour, and a page
+ * that changes hue as you scroll between songs reads as someone else's product.
+ * Green everywhere makes it his.
+ *
+ * It is a wash, not a background: the page underneath stays the near-black
+ * everything else is designed against, and the colour only softens the top.
+ */
+.glow { position: relative; }
+
+.glow::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: 62vh;
+  max-block-size: 520px;
+  background:
+    radial-gradient(120% 68% at 50% 0%, var(--accent) 0%, transparent 72%);
+  /* Green is a loud hue; it carries at a third of what a muted one needed. */
+  opacity: 0.17;
+  pointer-events: none;
+  z-index: 0;
+  /* Fades out rather than stopping, so there is no line where it ends. */
+  mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+}
+
+.glow > * { position: relative; z-index: 1; }
+
+/* --------------------------------------------------------------- motion */
+
+/*
+ * The bars beside whatever is playing. They were three fixed heights, which
+ * read as a logo rather than as sound.
+ */
+.meter span { animation: bar 900ms ease-in-out infinite; transform-origin: bottom; }
+.meter span:nth-child(2) { animation-duration: 640ms; animation-delay: -220ms; }
+.meter span:nth-child(3) { animation-duration: 1080ms; animation-delay: -460ms; }
+
+@keyframes bar {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+
+/* A page arrives rather than appearing. Small on purpose: anything longer
+   starts to feel like waiting. */
+@media (prefers-reduced-motion: no-preference) {
+  .page { animation: rise 260ms ease-out both; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .row, .admin-row, .card { transition: background 140ms ease; }
+  .btn, .iconbtn, .play { transition: transform 120ms ease, background 140ms ease, color 140ms ease; }
+  .btn:active, .iconbtn:active, .play:active { transform: scale(0.94); }
+  .cover img { transition: transform 240ms ease; }
+}
+
+/* Nothing above should move for someone who asked for less movement. */
+@media (prefers-reduced-motion: reduce) {
+  .meter span { animation: none; transform: scaleY(0.7); }
+}
