@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowOutIcon, CheckIcon, CloseIcon, CopyIcon, ShareIcon, WhatsAppIcon } from "./Icons";
 import type { Dict } from "@/lib/i18n";
+import { copyText } from "@/lib/clipboard";
 
 /**
  * Copy link, WhatsApp, native share — plus the "link copied" confirmation.
  * The URL is read in the browser so it is always the real, shareable one.
  */
 export function ShareSheet({
-  dict, title, label, text, buttonClass = "iconbtn",
+  dict, title, label, text, heading, buttonClass = "iconbtn",
 }: {
   dict: Dict;
   title: string;
@@ -17,8 +18,11 @@ export function ShareSheet({
   label: string;
   /** visible label; omit for an icon-only trigger */
   text?: string;
+  /** what the sheet says it is sharing; a song unless told otherwise */
+  heading?: string;
   buttonClass?: string;
 }) {
+  const sheetTitle = heading ?? dict.shareSong;
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [url, setUrl] = useState("");
@@ -42,12 +46,10 @@ export function ShareSheet({
   }, [open]);
 
   async function copy() {
-    try {
-      await navigator.clipboard.writeText(url || window.location.href);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
+    // Through the helper, not navigator.clipboard directly: mobile browsers
+    // refuse the clipboard API often enough that this page has already been
+    // caught by it once, and the fallback still works when they do.
+    setCopied(await copyText(url || window.location.href));
   }
 
   async function nativeShare() {
@@ -84,14 +86,14 @@ export function ShareSheet({
       {open && (
         <>
           <button type="button" className="scrim" aria-label={dict.cancel} onClick={() => setOpen(false)} />
-          <div className="sheet" role="dialog" aria-modal="true" aria-label={dict.shareSong}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-label={sheetTitle}>
             {copied && (
               <div className="toast" role="status">
                 <span><CheckIcon /> {dict.copied}</span>
               </div>
             )}
             <div className="sheet__head">
-              <h2 className="sheet__title">{dict.shareSong}</h2>
+              <h2 className="sheet__title">{sheetTitle}</h2>
               <button ref={closeRef} type="button" className="iconbtn" aria-label={dict.cancel}
                       onClick={() => setOpen(false)}>
                 <CloseIcon />

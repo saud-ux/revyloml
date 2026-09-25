@@ -44,7 +44,7 @@ export default async function HomePage({
           <span className="brand tracked">revyloml</span>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <LangToggle locale={locale} path="" />
-            <ShareSheet dict={dict} title={profile.name[locale]} label={dict.share} />
+            <ShareSheet dict={dict} title={profile.name[locale]} label={dict.share} heading={dict.sharePage} />
           </div>
         </header>
 
@@ -64,6 +64,7 @@ export default async function HomePage({
                 title={profile.name[locale]}
                 label={dict.sharePage}
                 text={dict.sharePage}
+                heading={dict.sharePage}
                 buttonClass="btn btn--primary"
               />
               <ShuffleButton dict={dict} />
@@ -82,7 +83,7 @@ export default async function HomePage({
             {featured && (
               <section className="card" style={{ marginBlockEnd: 18 }}>
                 <div className="featured__head">
-                  <span className="chip chip--accent">{dict.pinned}</span>
+                  <span className="chip chip--accent">{dict.featured}</span>
                   <span className="row__dur num">{duration(featured.duration)}</span>
                 </div>
                 <div className="featured">
@@ -103,9 +104,14 @@ export default async function HomePage({
               <Link
                 href={order === "newest" ? `/${locale}` : `/${locale}?sort=newest`}
                 className="sortlink"
-                aria-label={order === "newest" ? dict.sortToCustom : dict.sortToNewest}
+                aria-label={
+                  order === "newest"
+                    ? fill(dict.sortToCustom, { name: profile.name[locale] })
+                    : dict.sortToNewest
+                }
               >
-                <SortIcon /> {order === "newest" ? dict.newest : dict.ownOrder}
+                <SortIcon />{" "}
+                {order === "newest" ? dict.newest : fill(dict.ownOrder, { name: profile.name[locale] })}
               </Link>
             </div>
             <ul>
