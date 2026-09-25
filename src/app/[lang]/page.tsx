@@ -10,7 +10,7 @@ import { LangToggle } from "@/components/LangToggle";
 import { NoteIcon, SortIcon } from "@/components/Icons";
 import { ShuffleButton } from "@/components/ShuffleButton";
 import Link from "next/link";
-import { duration, playCount } from "@/lib/format";
+import { duration } from "@/lib/format";
 
 export default async function HomePage({
   params,
@@ -72,7 +72,7 @@ export default async function HomePage({
             {featured && (
               <section className="card" style={{ marginBlockEnd: 18 }}>
                 <div className="featured__head">
-                  <span className="chip chip--accent">{dict.featured}</span>
+                  <span className="chip chip--accent">{dict.pinned}</span>
                   <span className="row__dur num">{duration(featured.duration)}</span>
                 </div>
                 <div className="featured">
@@ -80,9 +80,6 @@ export default async function HomePage({
                   <a href={`/${locale}/s/${featured.slug}`} style={{ flexGrow: 1, minWidth: 0 }}>
                     <span style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                       <span className="featured__title">{featured.title[locale]}</span>
-                      {featured.plays >= 5 && (
-                        <span className="row__meta">{playCount(featured.plays, locale)}</span>
-                      )}
                     </span>
                   </a>
                   <PlayControl song={featured} dict={dict} title={featured.title[locale]} glyph={20} />
@@ -123,7 +120,7 @@ export default async function HomePage({
             dict={dict}
             title={profile.name[locale]}
             label={dict.sharePage}
-            text={dict.sharePage}
+            text={dict.share}
             heading={dict.sharePage}
             buttonClass="btn btn--primary"
           />

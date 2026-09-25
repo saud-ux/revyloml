@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePlayer } from "@/player/PlayerProvider";
 import { Cover } from "./Cover";
 import { PauseIcon, PlayIcon } from "./Icons";
-import { duration, playCount } from "@/lib/format";
+import { duration } from "@/lib/format";
 import type { Song } from "@/lib/types";
 import type { Locale, Dict } from "@/lib/i18n";
 
@@ -23,9 +23,6 @@ export function SongRow({ song, locale, dict }: { song: Song; locale: Locale; di
         <RowCover song={song} dict={dict} locale={locale} active={active} />
         <Link href={`/${locale}/s/${song.slug}`} className="row__main">
           <span className="row__title">{song.title[locale]}</span>
-          {song.plays >= 5 && (
-            <span className="row__meta">{playCount(song.plays, locale)}</span>
-          )}
         </Link>
         {active && (
           <span className="meter" aria-hidden>
