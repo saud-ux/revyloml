@@ -5,8 +5,10 @@ import { useActionState, useState } from "react";
 import { saveProfile } from "@/app/actions";
 import { Avatar } from "@/components/Cover";
 import { CheckIcon, ImageIcon } from "@/components/Icons";
-import type { Dict, Locale } from "@/lib/i18n";
+import { fill, type Dict, type Locale } from "@/lib/i18n";
 import type { Profile } from "@/lib/types";
+import { Bar } from "./Bar";
+import { useUpload } from "./useUpload";
 
 /** The three accent options from the design; the chosen one drives the whole site. */
 const ACCENTS: { value: string; label: Record<Locale, string> }[] = [
@@ -30,24 +32,46 @@ export function ProfileForm({
   profile: Profile;
 }) {
   const [state, action, pending] = useActionState(saveProfile, undefined);
+  const [photo, takePhoto] = useUpload("image", "photo");
   const [accent, setAccent] = useState(profile.accent);
   const [name, setName] = useState(profile.name[locale] || profile.name.en);
 
-  const errorKey = state?.error ? ERRORS[state.error] : undefined;
+  const error = photo.error ?? state?.error;
+  const errorKey = error ? ERRORS[error] : undefined;
+
+  const photoStatus =
+    photo.phase === "busy"
+      ? fill(dict.uploading, { percent: photo.percent })
+      : photo.phase === "error"
+        ? dict.uploadRetry
+        : photo.phase === "done"
+          ? dict.uploadDone
+          : null;
 
   return (
     <form action={action} className="form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="photoUrl" value={profile.photoUrl ?? ""} />
+      {/* Filled once the browser has put the file in storage itself, which is
+          the only way past the 1 MB cap on a server action body. */}
+      <input type="hidden" name="photoUploaded" value={photo.url ?? ""} readOnly />
 
       <div className="cover-field">
-        <Avatar size={76} name={name || "?"} url={profile.photoUrl} />
+        <Avatar size={76} name={name || "?"} url={photo.url ?? profile.photoUrl} />
         <div className="cover-field__col">
           <span className="field__label">{dict.photo}</span>
           <label className="btn btn--secondary">
             <ImageIcon /> {dict.changePhoto}
-            <input type="file" name="photo" accept="image/*" className="sr-only" />
+            <input
+              type="file"
+              name="photo"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => void takePhoto(e.target)}
+            />
           </label>
+          {photoStatus && <span className="dropzone__hint">{photoStatus}</span>}
+          {photo.phase === "busy" && <Bar percent={photo.percent} />}
         </div>
       </div>
 
@@ -99,12 +123,13 @@ export function ProfileForm({
         <p className="field__hint">{dict.accentHelp}</p>
       </fieldset>
 
-      {state?.error && (
-        <p className="field__error" role="alert">{errorKey ? dict[errorKey] : state.error}</p>
+      {error && (
+        <p className="field__error" role="alert">{errorKey ? dict[errorKey] : error}</p>
       )}
 
       <div className="form__actions">
-        <button type="submit" className="btn btn--primary" disabled={pending}>
+        {/* Saving mid-upload would file the profile without its photo. */}
+        <button type="submit" className="btn btn--primary" disabled={pending || photo.phase === "busy"}>
           {pending ? dict.saving : dict.saveChanges}
         </button>
         <Link href={`/${locale}/admin`} className="btn btn--secondary">{dict.cancel}</Link>

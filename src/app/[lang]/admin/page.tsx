@@ -3,6 +3,7 @@ import { listAllSongs } from "@/lib/data";
 import { fill, isLocale, t, type Locale } from "@/lib/i18n";
 import { AdminSongList } from "@/components/admin/AdminSongList";
 import { AdminGuide } from "@/components/admin/AdminGuide";
+import { StorageWarning } from "@/components/admin/StorageWarning";
 import { BackupPanel } from "@/components/admin/BackupPanel";
 import { headers } from "next/headers";
 import { PlusIcon, UserIcon } from "@/components/Icons";
@@ -23,6 +24,7 @@ export default async function AdminPage({ params }: { params: Promise<{ lang: st
 
   return (
     <>
+      <StorageWarning dict={dict} />
       <AdminGuide dict={dict} publicUrl={publicUrl} />
       <div className="admin-head">
         <div>

@@ -6,8 +6,10 @@ import { saveSong } from "@/app/actions";
 import { Cover } from "@/components/Cover";
 import { ImageIcon, NoteIcon } from "@/components/Icons";
 import { duration as fmtDuration } from "@/lib/format";
-import type { Dict, Locale } from "@/lib/i18n";
+import { fill, type Dict, type Locale } from "@/lib/i18n";
 import type { Song } from "@/lib/types";
+import { Bar } from "./Bar";
+import { useUpload, type Slot } from "./useUpload";
 
 const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
@@ -29,10 +31,20 @@ export function SongForm({
   song?: Song;
 }) {
   const [state, action, pending] = useActionState(saveSong, undefined);
-  const [audioName, setAudioName] = useState<string | null>(null);
-  const [audioBytes, setAudioBytes] = useState(0);
+  const [audio, takeAudio] = useUpload("audio", "audio");
+  const [cover, takeCover] = useUpload("image", "cover");
   const [seconds, setSeconds] = useState(song?.duration ?? 0);
   const [titleAr, setTitleAr] = useState(song?.title.ar ?? "");
+
+  const busy = audio.phase === "busy" || cover.phase === "busy";
+
+  /** What the picker says under itself once a file has been chosen. */
+  function status(slot: Slot): string | null {
+    if (slot.phase === "busy") return fill(dict.uploading, { percent: slot.percent });
+    if (slot.phase === "error") return dict.uploadRetry;
+    if (slot.name) return `${slot.name} · ${mb(slot.bytes)}`;
+    return null;
+  }
 
   /**
    * Read the track length in the browser rather than probing the file on the
@@ -41,8 +53,7 @@ export function SongForm({
   function onAudio(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setAudioName(file.name);
-    setAudioBytes(file.size);
+    // Read the length before handing the input over: the upload clears it.
     const url = URL.createObjectURL(file);
     const probe = new Audio();
     probe.preload = "metadata";
@@ -53,9 +64,13 @@ export function SongForm({
     };
     probe.onerror = () => URL.revokeObjectURL(url);
     probe.src = url;
+    void takeAudio(e.target);
   }
 
-  const errorKey = state?.error ? ERRORS[state.error] : undefined;
+  // An upload that failed in the browser reports the same codes the action
+  // does, so both end up in the same sentence under the form.
+  const error = audio.error ?? cover.error ?? state?.error;
+  const errorKey = error ? ERRORS[error] : undefined;
 
   return (
     <form action={action} className="form">
@@ -64,6 +79,9 @@ export function SongForm({
       {/* Controlled: an uncontrolled input written through a ref loses its value
           on the next render, which silently submitted every song as 0:00. */}
       <input type="hidden" name="duration" value={seconds} readOnly />
+      {/* Filled once the browser has put the file in storage itself. */}
+      <input type="hidden" name="audioUrl" value={audio.url ?? ""} readOnly />
+      <input type="hidden" name="coverUrl" value={cover.url ?? ""} readOnly />
 
       <div className="dropzone">
         <span className="dropzone__icon"><NoteIcon size={24} /></span>
@@ -72,12 +90,17 @@ export function SongForm({
           <input type="file" name="audio" accept="audio/*" className="sr-only" onChange={onAudio} />
         </label>
         <span className="dropzone__hint">
-          {audioName ? `${audioName} · ${fmtDuration(seconds)} · ${mb(audioBytes)}` : song?.audioUrl ? fmtDuration(seconds) : dict.formats}
+          {audio.name
+            ? `${status(audio)} · ${fmtDuration(seconds)}`
+            : song?.audioUrl
+              ? fmtDuration(seconds)
+              : dict.formats}
         </span>
+        {audio.phase === "busy" && <Bar percent={audio.percent} />}
         {/* Nothing re-encodes the upload, so the file Yazan picks is the file
             every listener downloads. A WAV is a slow page on mobile data. */}
-        {!audioName && <span className="dropzone__hint">{dict.formatsHint}</span>}
-        {audioBytes > 12 * 1024 * 1024 && (
+        {!audio.name && <span className="dropzone__hint">{dict.formatsHint}</span>}
+        {audio.bytes > 12 * 1024 * 1024 && (
           <span className="dropzone__warn">{dict.formatsHint}</span>
         )}
       </div>
@@ -102,13 +125,25 @@ export function SongForm({
       <div className="field">
         <span className="field__label">{dict.cover}</span>
         <div className="cover-field">
-          <Cover size={76} title={titleAr || "?"} slug={song?.slug ?? "new"} url={song?.coverUrl} />
+          <Cover
+            size={76}
+            title={titleAr || "?"}
+            slug={song?.slug ?? "new"}
+            url={cover.url ?? song?.coverUrl}
+          />
           <div className="cover-field__col">
-            <span className="dropzone__hint">{dict.generated}</span>
+            <span className="dropzone__hint">{status(cover) ?? dict.generated}</span>
             <label className="btn btn--secondary">
               <ImageIcon /> {dict.replaceCover}
-              <input type="file" name="cover" accept="image/*" className="sr-only" />
+              <input
+                type="file"
+                name="cover"
+                accept="image/*"
+                className="sr-only"
+                onChange={(e) => void takeCover(e.target)}
+              />
             </label>
+            {cover.phase === "busy" && <Bar percent={cover.percent} />}
           </div>
         </div>
       </div>
@@ -135,12 +170,13 @@ export function SongForm({
         <p className="field__hint">{dict.visHelp}</p>
       </fieldset>
 
-      {state?.error && (
-        <p className="field__error" role="alert">{errorKey ? dict[errorKey] : state.error}</p>
+      {error && (
+        <p className="field__error" role="alert">{errorKey ? dict[errorKey] : error}</p>
       )}
 
       <div className="form__actions">
-        <button type="submit" className="btn btn--primary" disabled={pending}>
+        {/* Saving mid-upload would file the song without its audio. */}
+        <button type="submit" className="btn btn--primary" disabled={pending || busy}>
           {pending ? dict.saving : song ? dict.saveChanges : dict.save}
         </button>
         <Link href={`/${locale}/admin`} className="btn btn--secondary">{dict.cancel}</Link>

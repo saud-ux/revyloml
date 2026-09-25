@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getSong } from "@/lib/data";
 import { isLocale, t, type Locale } from "@/lib/i18n";
 import { SongForm } from "@/components/admin/SongForm";
+import { StorageWarning } from "@/components/admin/StorageWarning";
 
 export default async function EditSongPage({
   params,
@@ -16,6 +17,7 @@ export default async function EditSongPage({
 
   return (
     <>
+      <StorageWarning dict={dict} />
       <h1 className="admin-title" style={{ marginBlockEnd: 20 }}>{dict.editSong}</h1>
       <SongForm locale={locale} dict={dict} song={song} />
     </>

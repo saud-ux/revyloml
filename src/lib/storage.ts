@@ -67,6 +67,112 @@ const EXT: Record<string, string> = {
   "image/avif": ".avif",
 };
 
+export type StorageHealth =
+  | { ok: true; backend: "supabase" | "disk"; bucket?: string }
+  | { ok: false; backend: "supabase" | "disk"; bucket?: string; reason: "no-bucket" | "unauthorized" | "unreachable" };
+
+/**
+ * Answers whether uploads will actually work, so the admin can say what is
+ * wrong instead of letting every upload fail with a generic error. The usual
+ * cause is a missing bucket: the project and the bucket are separate things and
+ * easy to confuse when they share a name.
+ */
+export async function checkStorage(): Promise<StorageHealth> {
+  const sb = supabase();
+  if (!sb) return { ok: true, backend: "disk" };
+
+  try {
+    const res = await fetch(`${sb.url}/storage/v1/bucket/${BUCKET}`, {
+      headers: { apikey: sb.key, Authorization: `Bearer ${sb.key}` },
+      cache: "no-store",
+    });
+    if (res.ok) return { ok: true, backend: "supabase", bucket: BUCKET };
+    if (res.status === 404) return { ok: false, backend: "supabase", bucket: BUCKET, reason: "no-bucket" };
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, backend: "supabase", bucket: BUCKET, reason: "unauthorized" };
+    }
+    return { ok: false, backend: "supabase", bucket: BUCKET, reason: "unreachable" };
+  } catch {
+    return { ok: false, backend: "supabase", bucket: BUCKET, reason: "unreachable" };
+  }
+}
+
+export type Ticket =
+  | { ok: true; uploadUrl: string; publicUrl: string; contentType: string }
+  | { ok: false; error: "type" | "size" | "disk" | "upstream" };
+
+/**
+ * A one-off permission slip for the browser to upload a single file straight
+ * into Supabase, skipping this server entirely.
+ *
+ * The obvious design — post the file to a server action and forward it — is the
+ * one that shipped, and it never worked: a server action body is capped at 1 MB,
+ * so every song and every cover was rejected with a 413 before any of our code
+ * ran. Raising the cap would only move the problem, because the free instance
+ * has 512 MB of memory and would have to hold the whole file, then send it to
+ * Singapore a second time. A signed URL means the file makes one trip, from the
+ * phone to the bucket.
+ *
+ * The slip is minted only for a signed-in admin, names the file itself, and
+ * expires. The bucket enforces the size and type limits again on arrival, since
+ * the numbers checked here are whatever the browser claimed.
+ */
+export async function createUploadTicket(
+  kind: "audio" | "image",
+  contentType: string,
+  size: number,
+): Promise<Ticket> {
+  const allowed = kind === "audio" ? AUDIO_TYPES : IMAGE_TYPES;
+  const limit = kind === "audio" ? MAX_AUDIO_BYTES : MAX_IMAGE_BYTES;
+  if (!allowed.has(contentType)) return { ok: false, error: "type" };
+  if (size > limit) return { ok: false, error: "size" };
+
+  const sb = supabase();
+  // No bucket configured: the caller falls back to posting the file, which is
+  // what local development does and what the 1 MB cap is generous enough for.
+  if (!sb) return { ok: false, error: "disk" };
+
+  const name = `${randomBytes(12).toString("hex")}${EXT[contentType] ?? ""}`;
+
+  let res: Response;
+  try {
+    res = await fetch(`${sb.url}/storage/v1/object/upload/sign/${BUCKET}/${name}`, {
+      method: "POST",
+      headers: {
+        apikey: sb.key,
+        Authorization: `Bearer ${sb.key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ expiresIn: 60 * 30 }),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("Supabase sign unreachable", err);
+    return { ok: false, error: "upstream" };
+  }
+
+  if (!res.ok) {
+    console.error("Supabase sign failed", res.status, await res.text().catch(() => ""));
+    return { ok: false, error: "upstream" };
+  }
+
+  // Supabase answers with a path plus token, not an absolute URL.
+  const { url } = (await res.json()) as { url: string };
+  return {
+    ok: true,
+    uploadUrl: `${sb.url}/storage/v1${url.startsWith("/") ? url : `/${url}`}`,
+    publicUrl: `${sb.url}/storage/v1/object/public/${BUCKET}/${name}`,
+    contentType,
+  };
+}
+
+/** Whether a URL is one of ours, so a form cannot point a song at anything else. */
+export function isOwnUpload(url: string): boolean {
+  const sb = supabase();
+  if (sb && url.startsWith(`${sb.url}/storage/v1/object/public/${BUCKET}/`)) return true;
+  return /^\/media\/[a-f0-9]+\.[a-z0-9]+$/i.test(url);
+}
+
 export type SaveResult =
   | { ok: true; url: string }
   | { ok: false; error: "type" | "size" | "upstream" };

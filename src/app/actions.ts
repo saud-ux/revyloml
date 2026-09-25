@@ -9,7 +9,7 @@ import {
 import { adminConfigured, checkAdminPassword, createSession, destroySession, isSignedIn } from "@/lib/auth";
 import { checkLoginAttempt, clearLoginAttempts } from "@/lib/ratelimit";
 import { headers } from "next/headers";
-import { deleteUpload, saveUpload } from "@/lib/storage";
+import { createUploadTicket, deleteUpload, isOwnUpload, saveUpload, type Ticket } from "@/lib/storage";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n";
 import type { Visibility } from "@/lib/types";
 
@@ -65,6 +65,22 @@ export async function signOut(form: FormData): Promise<void> {
   redirect(`/${locale}`);
 }
 
+// ---------------------------------------------------------------- uploads
+
+/**
+ * Hands the browser a signed URL so it can put a file into the bucket itself.
+ * Carries no file, so it is nowhere near the 1 MB action body limit that was
+ * rejecting every upload.
+ */
+export async function requestUpload(
+  kind: "audio" | "image",
+  contentType: string,
+  size: number,
+): Promise<Ticket> {
+  await requireAdmin();
+  return createUploadTicket(kind, contentType, size);
+}
+
 // ---------------------------------------------------------------- songs
 
 async function readSongForm(form: FormData, existingAudio: string | null, existingCover: string | null) {
@@ -73,16 +89,29 @@ async function readSongForm(form: FormData, existingAudio: string | null, existi
   let audioUrl = existingAudio;
   let coverUrl = existingCover;
 
+  // The browser normally uploads straight to the bucket and sends back the URL
+  // it landed on; only the disk backend still posts the file itself.
+  const audioDone = String(form.get("audioUrl") ?? "");
+  const coverDone = String(form.get("coverUrl") ?? "");
+  if (audioDone && isOwnUpload(audioDone) && audioDone !== existingAudio) {
+    await deleteUpload(existingAudio);
+    audioUrl = audioDone;
+  }
+  if (coverDone && isOwnUpload(coverDone) && coverDone !== existingCover) {
+    await deleteUpload(existingCover);
+    coverUrl = coverDone;
+  }
+
   if (audio instanceof File && audio.size > 0) {
     const saved = await saveUpload(audio, "audio");
     if (!saved.ok) return { error: `audio-${saved.error}` } as const;
-    await deleteUpload(existingAudio);
+    await deleteUpload(audioUrl);
     audioUrl = saved.url;
   }
   if (cover instanceof File && cover.size > 0) {
     const saved = await saveUpload(cover, "image");
     if (!saved.ok) return { error: `cover-${saved.error}` } as const;
-    await deleteUpload(existingCover);
+    await deleteUpload(coverUrl);
     coverUrl = saved.url;
   }
 
@@ -154,7 +183,14 @@ export async function saveProfile(_prev: FormState, form: FormData): Promise<For
   await requireAdmin();
   const locale = localeFrom(form.get("locale"));
   const photo = form.get("photo");
-  let photoUrl = String(form.get("photoUrl") ?? "") || null;
+  const existingPhoto = String(form.get("photoUrl") ?? "") || null;
+  let photoUrl = existingPhoto;
+
+  const photoDone = String(form.get("photoUploaded") ?? "");
+  if (photoDone && isOwnUpload(photoDone) && photoDone !== existingPhoto) {
+    await deleteUpload(existingPhoto);
+    photoUrl = photoDone;
+  }
 
   if (photo instanceof File && photo.size > 0) {
     const saved = await saveUpload(photo, "image");
