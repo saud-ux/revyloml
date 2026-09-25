@@ -65,7 +65,7 @@ export function ProfileForm({
             <input
               type="file"
               name="photo"
-              accept="image/*"
+              accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.gif"
               className="sr-only"
               onChange={(e) => void takePhoto(e.target)}
             />

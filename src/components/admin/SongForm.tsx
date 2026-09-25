@@ -103,7 +103,12 @@ export function SongForm({
           <input
             type="file"
             name="audio"
-            accept="audio/*,video/*"
+            /* Extensions as well as the wildcards. iOS matches files in the
+               Files app by extension, and on wildcards alone it greys out
+               perfectly good audio, leaving folders as the only thing that can
+               be tapped. Anything unsuitable that slips through is caught on
+               the way in and reported. */
+            accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.aiff,.aif,.caf,.ogg,.oga,.opus,.flac,.mp4,.m4v,.mov,.3gp,.webm,.mkv"
             className="sr-only"
             onChange={onAudio}
           />
@@ -159,7 +164,7 @@ export function SongForm({
               <input
                 type="file"
                 name="cover"
-                accept="image/*"
+                accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.gif"
                 className="sr-only"
                 onChange={(e) => void takeCover(e.target)}
               />
