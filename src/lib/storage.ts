@@ -81,19 +81,25 @@ export async function checkStorage(): Promise<StorageHealth> {
   const sb = supabase();
   if (!sb) return { ok: true, backend: "disk" };
 
+  const bad = (reason: "no-bucket" | "unauthorized" | "unreachable", detail: string) => {
+    // The banner can only say so much, and the URL is the one thing worth
+    // naming out loud: it is the setting most often pasted wrong, and it is not
+    // a secret. The key never goes near a log.
+    console.error(`Storage check failed: ${reason} (${detail}) for ${sb.url}/storage/v1/bucket/${BUCKET}`);
+    return { ok: false as const, backend: "supabase" as const, bucket: BUCKET, reason };
+  };
+
   try {
     const res = await fetch(`${sb.url}/storage/v1/bucket/${BUCKET}`, {
       headers: { apikey: sb.key, Authorization: `Bearer ${sb.key}` },
       cache: "no-store",
     });
     if (res.ok) return { ok: true, backend: "supabase", bucket: BUCKET };
-    if (res.status === 404) return { ok: false, backend: "supabase", bucket: BUCKET, reason: "no-bucket" };
-    if (res.status === 401 || res.status === 403) {
-      return { ok: false, backend: "supabase", bucket: BUCKET, reason: "unauthorized" };
-    }
-    return { ok: false, backend: "supabase", bucket: BUCKET, reason: "unreachable" };
-  } catch {
-    return { ok: false, backend: "supabase", bucket: BUCKET, reason: "unreachable" };
+    if (res.status === 404) return bad("no-bucket", "404");
+    if (res.status === 401 || res.status === 403) return bad("unauthorized", String(res.status));
+    return bad("unreachable", `HTTP ${res.status}`);
+  } catch (err) {
+    return bad("unreachable", err instanceof Error ? err.message : "threw");
   }
 }
 
