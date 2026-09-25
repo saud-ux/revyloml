@@ -22,9 +22,31 @@ export const UPLOAD_DIR =
   process.env.UPLOAD_DIR ?? path.join(process.cwd(), ".uploads");
 const BUCKET = process.env.SUPABASE_BUCKET ?? "media";
 
+/**
+ * Forgives the ways this setting gets pasted wrong.
+ *
+ * It is copied by hand from a dashboard into a deploy form, usually on a phone,
+ * and it only has to be slightly off for every upload to fail with nothing to
+ * show for it. Three mistakes are common enough to just fix: stray whitespace, a
+ * missing scheme (which makes fetch throw rather than fail politely), and the
+ * dashboard address of the project pasted in place of the project's own API
+ * host. Anything else is left alone and reported by the storage check.
+ */
+export function normalizeSupabaseUrl(raw: string): string {
+  let url = raw.trim().replace(/\/+$/, "");
+  if (!url) return url;
+
+  // https://supabase.com/dashboard/project/<ref>/... is the page, not the API.
+  const dashboard = url.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i);
+  if (dashboard) return `https://${dashboard[1]}.supabase.co`;
+
+  if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+  return url.replace(/\/+$/, "");
+}
+
 function supabase(): { url: string; key: string } | null {
-  const url = process.env.SUPABASE_URL?.replace(/\/+$/, "");
-  const key = process.env.SUPABASE_SERVICE_KEY;
+  const url = normalizeSupabaseUrl(process.env.SUPABASE_URL ?? "");
+  const key = process.env.SUPABASE_SERVICE_KEY?.trim();
   return url && key ? { url, key } : null;
 }
 
