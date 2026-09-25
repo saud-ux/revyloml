@@ -93,6 +93,32 @@ export function PlayerProvider({
   const loaded = useRef<string | null>(null);
 
   /**
+   * Drops a song that has left the list.
+   *
+   * When a song is deleted in the dashboard the refreshed page hands down a
+   * shorter queue, and the mini player would otherwise go on playing a track
+   * that no longer exists. It only counts as deleted if it was in the list a
+   * moment ago and is not any more — a song opened by its own link was never
+   * in the list, and must keep playing.
+   */
+  const inList = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const now = new Set(queue.map((s) => s.slug));
+    const slug = current?.slug;
+    if (slug && inList.current.has(slug) && !now.has(slug)) {
+      const el = audioRef.current;
+      el?.pause();
+      el?.removeAttribute("src");
+      loaded.current = null;
+      setCurrent(null);
+      setPlaying(false);
+      setTime(0);
+      setLength(0);
+    }
+    inList.current = now;
+  }, [queue, current]);
+
+  /**
    * Starts the element now, inside the tap that asked for it.
    *
    * This cannot go in an effect. iOS only honours play() while it is still

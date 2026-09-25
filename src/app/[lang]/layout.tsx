@@ -6,6 +6,7 @@ import { DEFAULT_LOCALE, LOCALES, dir, isLocale, t, type Locale } from "@/lib/i1
 import { getProfile, listPublicSongs } from "@/lib/data";
 import { PlayerProvider } from "@/player/PlayerProvider";
 import { MiniPlayer } from "@/components/MiniPlayer";
+import { FreshOnReturn } from "@/components/FreshOnReturn";
 import { notFound } from "next/navigation";
 
 /** One family carries both scripts, which is why the bilingual page does not
@@ -79,6 +80,8 @@ export default async function LocaleLayout({
         <PlayerProvider queue={songs} initial={null}>
           {children}
           <MiniPlayer locale={locale} dict={t(locale)} />
+          {/* Sits inside the provider so a refresh never remounts the player. */}
+          <FreshOnReturn />
         </PlayerProvider>
       </body>
     </html>
