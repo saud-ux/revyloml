@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePlayer } from "@/player/PlayerProvider";
 import { Cover } from "./Cover";
-import { NextIcon, PauseIcon, PlayIcon } from "./Icons";
+import { CloseIcon, NextIcon, PauseIcon, PlayIcon } from "./Icons";
 import type { Locale, Dict } from "@/lib/i18n";
 
 /**
@@ -11,7 +11,7 @@ import type { Locale, Dict } from "@/lib/i18n";
  * the locale layout so it keeps playing while you browse.
  */
 export function MiniPlayer({ locale, dict }: { locale: Locale; dict: Dict }) {
-  const { current, playing, toggle, next, time, length, playable } = usePlayer();
+  const { current, playing, toggle, next, close, time, length, playable } = usePlayer();
   if (!current) return null;
 
   const pct = length > 0 ? Math.min(100, (time / length) * 100) : 0;
@@ -39,6 +39,11 @@ export function MiniPlayer({ locale, dict }: { locale: Locale; dict: Dict }) {
         </button>
         <button type="button" className="iconbtn" onClick={next} aria-label={dict.next}>
           <NextIcon size={20} className="flip" />
+        </button>
+        {/* Last in the row, at the edge of the screen: closing the bar is the
+            one control here you do not want to hit while reaching for play. */}
+        <button type="button" className="iconbtn" onClick={close} aria-label={dict.stopPlaying}>
+          <CloseIcon size={17} />
         </button>
       </div>
       <div className="mini__bar" aria-hidden>

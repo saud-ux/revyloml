@@ -26,6 +26,8 @@ type PlayerState = {
   playAll: (shuffle?: boolean) => void;
   next: () => void;
   prev: () => void;
+  /** Stops the song and takes the bar off the screen. */
+  close: () => void;
   seekTo: (seconds: number) => void;
 };
 
@@ -101,22 +103,30 @@ export function PlayerProvider({
    * moment ago and is not any more — a song opened by its own link was never
    * in the list, and must keep playing.
    */
+  /**
+   * Stops the song and empties the element, which is what takes the mini
+   * player off the screen: it renders nothing without a current song.
+   */
+  const close = useCallback(() => {
+    const el = audioRef.current;
+    el?.pause();
+    // Dropping the source too, so a closed song is not still being buffered
+    // in the background on a phone's data.
+    el?.removeAttribute("src");
+    loaded.current = null;
+    setCurrent(null);
+    setPlaying(false);
+    setTime(0);
+    setLength(0);
+  }, []);
+
   const inList = useRef<Set<string>>(new Set());
   useEffect(() => {
     const now = new Set(queue.map((s) => s.slug));
     const slug = current?.slug;
-    if (slug && inList.current.has(slug) && !now.has(slug)) {
-      const el = audioRef.current;
-      el?.pause();
-      el?.removeAttribute("src");
-      loaded.current = null;
-      setCurrent(null);
-      setPlaying(false);
-      setTime(0);
-      setLength(0);
-    }
+    if (slug && inList.current.has(slug) && !now.has(slug)) close();
     inList.current = now;
-  }, [queue, current]);
+  }, [queue, current, close]);
 
   /**
    * Starts the element now, inside the tap that asked for it.
@@ -250,10 +260,10 @@ export function PlayerProvider({
     () => ({
       queue, current, playing, time, length, playable, shuffled, repeat,
       toggle, toggleShuffle, toggleRepeat, playSong, playAll,
-      next: () => step(1), prev: () => step(-1), seekTo,
+      next: () => step(1), prev: () => step(-1), seekTo, close,
     }),
     [queue, current, playing, time, length, playable, shuffled, repeat,
-     toggle, toggleShuffle, toggleRepeat, playSong, playAll, step, seekTo],
+     toggle, toggleShuffle, toggleRepeat, playSong, playAll, step, seekTo, close],
   );
 
   return (
