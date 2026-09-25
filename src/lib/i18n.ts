@@ -17,7 +17,7 @@ const dict = {
     share: "مشاركة",
     shareSong: "شارك هذه الأغنية",
     shuffle: "عشوائي",
-    pinned: "مثبّتة",
+    pinned: "مثبتة",
     newest: "الأحدث أولاً",
     ownOrder: "ترتيب {name}",
     sortToNewest: "رتّب حسب الأحدث",
