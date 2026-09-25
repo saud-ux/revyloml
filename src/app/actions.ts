@@ -13,6 +13,9 @@ import { createUploadTicket, deleteUpload, isOwnUpload, saveUpload, type Ticket 
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n";
 import type { Visibility } from "@/lib/types";
 
+/** Matches --accent in tokens.css, which is what the site actually renders. */
+const ACCENT = "#1DB954";
+
 /**
  * Every action re-checks the session. The admin layout also guards the pages,
  * but a server action is its own HTTP endpoint — guarding only the page that
@@ -221,7 +224,11 @@ export async function saveProfile(_prev: FormState, form: FormData): Promise<For
     name: { ar: String(form.get("nameAr") ?? "").trim(), en: String(form.get("nameEn") ?? "").trim() },
     bio: { ar: String(form.get("bioAr") ?? "").trim(), en: String(form.get("bioEn") ?? "").trim() },
     photoUrl,
-    accent: /^#[0-9a-f]{6}$/i.test(String(form.get("accent"))) ? String(form.get("accent")) : "#1DB954",
+    // One accent, and no longer a choice: the picker offered three colours and
+    // changed nothing but the link preview images, because the site's green is
+    // a CSS token the stored value was never wired to. Rather than wire up a
+    // setting nobody asked for, the lie is gone and the colour is the token.
+    accent: ACCENT,
     social: {
       instagram: handleOf("instagram"),
       tiktok: handleOf("tiktok"),

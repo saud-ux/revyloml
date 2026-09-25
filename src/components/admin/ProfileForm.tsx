@@ -4,18 +4,11 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { saveProfile } from "@/app/actions";
 import { Avatar } from "@/components/Cover";
-import { CheckIcon, ImageIcon } from "@/components/Icons";
+import { ImageIcon } from "@/components/Icons";
 import { fill, type Dict, type Locale } from "@/lib/i18n";
 import type { Profile } from "@/lib/types";
 import { Bar } from "./Bar";
 import { useUpload } from "./useUpload";
-
-/** The three accent options from the design; the chosen one drives the whole site. */
-const ACCENTS: { value: string; label: Record<Locale, string> }[] = [
-  { value: "#1DB954", label: { en: "Signal Green", ar: "أخضر" } },
-  { value: "#E9A23B", label: { en: "Ember Amber", ar: "كهرماني" } },
-  { value: "#8B6FF0", label: { en: "Velvet", ar: "بنفسجي" } },
-];
 
 const ERRORS: Record<string, keyof Dict> = {
   handle: "errHandle",
@@ -33,7 +26,6 @@ export function ProfileForm({
 }) {
   const [state, action, pending] = useActionState(saveProfile, undefined);
   const [photo, takePhoto] = useUpload("image", "photo");
-  const [accent, setAccent] = useState(profile.accent);
   const [name, setName] = useState(profile.name[locale] || profile.name.en);
 
   const error = photo.error ?? state?.error;
@@ -132,23 +124,6 @@ export function ProfileForm({
         <textarea className="input input--area ltr" name="bioEn" rows={3}
                   maxLength={160} defaultValue={profile.bio.en} />
       </label>
-
-      <fieldset className="field">
-        <legend className="field__label">{dict.accent}</legend>
-        <div className="accents">
-          {ACCENTS.map((a) => (
-            <label key={a.value} className="accent">
-              <input type="radio" name="accent" value={a.value} className="sr-only"
-                     checked={accent === a.value} onChange={() => setAccent(a.value)} />
-              <span className="accent__dot" style={{ background: a.value }}>
-                {accent === a.value && <CheckIcon size={18} />}
-              </span>
-              <span className="accent__label">{a.label[locale]}</span>
-            </label>
-          ))}
-        </div>
-        <p className="field__hint">{dict.accentHelp}</p>
-      </fieldset>
 
       {error && (
         <p className="field__error" role="alert">{errorKey ? dict[errorKey] : error}</p>

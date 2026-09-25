@@ -303,15 +303,8 @@
 .cover-field { display: flex; align-items: center; gap: var(--sp-4); }
 .cover-field__col { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; }
 
-.accents { display: flex; gap: var(--sp-3); }
-.accent { display: flex; flex-direction: column; align-items: center; gap: 8px; inline-size: 88px; cursor: pointer; }
-.accent__dot {
-  inline-size: 44px; block-size: 44px; border-radius: var(--r-ctl); display: grid; place-items: center;
-  color: var(--on-accent); box-shadow: 0 0 0 2px var(--bg), 0 0 0 2px var(--bg);
-}
 .accent input:checked + .accent__dot { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
 .accent input:focus-visible + .accent__dot { outline: 2px solid var(--accent); outline-offset: 4px; }
-.accent__label { font-size: 11px; color: var(--t3); text-align: center; }
 
 /* ---------------------------------------------------------------- auth */
 .auth { flex-grow: 1; display: grid; place-items: center; padding: var(--sp-8) var(--gutter); }
@@ -431,19 +424,6 @@
 }
 
 .social__link:hover { color: var(--t1); background: var(--s2); }
-
-/* The scannable code, on its own light tile so a scanner has the contrast it
-   needs against a page that is otherwise entirely dark. */
-.qr {
-  inline-size: fit-content;
-  padding: 10px;
-  border-radius: var(--r-md);
-  background: #fff;
-  margin-block: var(--sp-3) var(--sp-4);
-}
-
-.qr img { display: block; inline-size: 168px; block-size: 168px; }
-
 /* Who was here last, under the song's own details. */
 .admin-row__by { display: block; margin-block-start: 3px; color: var(--t3); font-size: 12px; }
 

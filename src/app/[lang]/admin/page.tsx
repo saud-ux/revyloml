@@ -6,7 +6,6 @@ import { AdminSongList } from "@/components/admin/AdminSongList";
 import { AdminGuide } from "@/components/admin/AdminGuide";
 import { StorageWarning } from "@/components/admin/StorageWarning";
 import { BackupPanel } from "@/components/admin/BackupPanel";
-import { QrPanel } from "@/components/admin/QrPanel";
 import { headers } from "next/headers";
 import { PlusIcon, UserIcon } from "@/components/Icons";
 
@@ -54,8 +53,6 @@ export default async function AdminPage({ params }: { params: Promise<{ lang: st
           origin={origin}
         />
       )}
-
-      <QrPanel url={publicUrl} dict={dict} />
 
       <BackupPanel dict={dict} locale={locale} origin={origin} />
     </>
