@@ -33,7 +33,9 @@ const BUCKET = process.env.SUPABASE_BUCKET ?? "media";
  * host. Anything else is left alone and reported by the storage check.
  */
 export function normalizeSupabaseUrl(raw: string): string {
-  let url = raw.trim().replace(/\/+$/, "");
+  // Whitespace anywhere, not just at the ends: a value pasted from a wrapped
+  // display can carry a line break in the middle of it.
+  let url = raw.replace(/\s+/g, "").replace(/\/+$/, "");
   if (!url) return url;
 
   // https://supabase.com/dashboard/project/<ref>/... is the page, not the API.
@@ -46,8 +48,27 @@ export function normalizeSupabaseUrl(raw: string): string {
 
 function supabase(): { url: string; key: string } | null {
   const url = normalizeSupabaseUrl(process.env.SUPABASE_URL ?? "");
-  const key = process.env.SUPABASE_SERVICE_KEY?.trim();
+  // A Supabase key never contains whitespace, and one pasted on a phone often
+  // does: the key is long, the field wraps, and a newline comes along with it.
+  // That newline is illegal in an HTTP header, so fetch threw before it ever
+  // opened a connection and the failure read as "cannot reach Supabase".
+  const key = (process.env.SUPABASE_SERVICE_KEY ?? "").replace(/\s+/g, "");
   return url && key ? { url, key } : null;
+}
+
+/**
+ * Strips anything key-shaped out of text bound for a log.
+ *
+ * Needed because the exception thrown for a malformed header quotes the header
+ * value back at you, and that value is the service key. The first version of
+ * this logging put part of the key into the deploy log.
+ */
+function redact(text: string, key?: string): string {
+  let out = text;
+  if (key) out = out.split(key).join("[key]");
+  return out
+    .replace(/sb_(secret|publishable)_[A-Za-z0-9_-]+/g, "[key]")
+    .replace(/eyJ[A-Za-z0-9._-]{20,}/g, "[key]");
 }
 
 export function storageBackend(): "supabase" | "disk" {
@@ -107,7 +128,9 @@ export async function checkStorage(): Promise<StorageHealth> {
     // The banner can only say so much, and the URL is the one thing worth
     // naming out loud: it is the setting most often pasted wrong, and it is not
     // a secret. The key never goes near a log.
-    console.error(`Storage check failed: ${reason} (${detail}) for ${sb.url}/storage/v1/bucket/${BUCKET}`);
+    console.error(
+      redact(`Storage check failed: ${reason} (${detail}) for ${sb.url}/storage/v1/bucket/${BUCKET}`, sb.key),
+    );
     return { ok: false as const, backend: "supabase" as const, bucket: BUCKET, reason };
   };
 
@@ -121,7 +144,7 @@ export async function checkStorage(): Promise<StorageHealth> {
     if (res.status === 401 || res.status === 403) return bad("unauthorized", String(res.status));
     return bad("unreachable", `HTTP ${res.status}`);
   } catch (err) {
-    return bad("unreachable", err instanceof Error ? err.message : "threw");
+    return bad("unreachable", err instanceof Error ? `${err.name}: ${err.message}` : "threw");
   }
 }
 
@@ -175,12 +198,12 @@ export async function createUploadTicket(
       cache: "no-store",
     });
   } catch (err) {
-    console.error("Supabase sign unreachable", err);
+    console.error(redact(`Supabase sign unreachable: ${err}`, sb.key));
     return { ok: false, error: "upstream" };
   }
 
   if (!res.ok) {
-    console.error("Supabase sign failed", res.status, await res.text().catch(() => ""));
+    console.error(redact(`Supabase sign failed ${res.status}: ${await res.text().catch(() => "")}`, sb.key));
     return { ok: false, error: "upstream" };
   }
 
@@ -241,14 +264,12 @@ export async function saveUpload(
         body: file,
       });
     } catch (err) {
-      console.error("Supabase upload unreachable", err);
+      console.error(redact(`Supabase upload unreachable: ${err}`, sb.key));
       return { ok: false, error: "upstream" };
     }
     if (!res.ok) {
       console.error(
-        "Supabase upload failed",
-        res.status,
-        await res.text().catch(() => ""),
+        redact(`Supabase upload failed ${res.status}: ${await res.text().catch(() => "")}`, sb.key),
       );
       return { ok: false, error: "upstream" };
     }
