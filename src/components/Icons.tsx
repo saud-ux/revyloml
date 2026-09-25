@@ -37,6 +37,8 @@ export const CheckIcon = ({ size = 16 }: P) => stroke('<path d="M5 12.6 9.5 17 1
 export const CloseIcon = ({ size = 18 }: P) => stroke('<path d="M6.2 6.2 17.8 17.8M17.8 6.2 6.2 17.8"/>', size);
 export const ShuffleIcon = ({ size = 19 }: P) =>
   stroke('<path d="M4 7h3.4l9.2 10H20"/><path d="M4 17h3.4l2.3-2.6"/><path d="M14.3 9.6 16.6 7H20"/><path d="M17.4 4.4 20 7l-2.6 2.6"/><path d="M17.4 14.4 20 17l-2.6 2.6"/>', size);
+export const RepeatIcon = ({ size = 19 }: P) =>
+  stroke('<path d="M7 7h9a4 4 0 0 1 4 4v.6"/><path d="M17 17H8a4 4 0 0 1-4-4v-.6"/><path d="M9.6 4.4 7 7l2.6 2.6"/><path d="M14.4 19.6 17 17l-2.6-2.6"/>', size);
 export const SortIcon = ({ size = 14 }: P) => stroke('<path d="M6 7h12M8 12h8M10.5 17h3"/>', size);
 export const NoteIcon = ({ size = 28 }: P) =>
   stroke('<path d="M9.4 17.6V6.3l9.8-2v11"/><circle cx="6.9" cy="17.6" r="2.5"/><circle cx="16.7" cy="15.3" r="2.5"/>', size);

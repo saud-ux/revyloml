@@ -16,8 +16,11 @@ type PlayerState = {
   /** false when the current song has no uploaded audio file */
   playable: boolean;
   shuffled: boolean;
+  /** Replay the same song at the end instead of stopping. */
+  repeat: boolean;
   toggle: () => void;
   toggleShuffle: () => void;
+  toggleRepeat: () => void;
   playSong: (song: Song) => void;
   /** starts the whole list, optionally in a random order */
   playAll: (shuffle?: boolean) => void;
@@ -68,6 +71,7 @@ export function PlayerProvider({
   const [time, setTime] = useState(0);
   const [length, setLength] = useState(initial?.duration ?? 0);
   const [shuffled, setShuffled] = useState(false);
+  const [repeat, setRepeat] = useState(false);
   const [shuffleOrder, setShuffleOrder] = useState<string[]>([]);
 
   const playable = Boolean(current?.audioUrl);
@@ -161,6 +165,8 @@ export function PlayerProvider({
     [queue, load],
   );
 
+  const toggleRepeat = useCallback(() => setRepeat((on) => !on), []);
+
   const toggleShuffle = useCallback(() => {
     setShuffled((on) => {
       if (on) return false;
@@ -216,12 +222,12 @@ export function PlayerProvider({
 
   const value = useMemo<PlayerState>(
     () => ({
-      queue, current, playing, time, length, playable, shuffled,
-      toggle, toggleShuffle, playSong, playAll,
+      queue, current, playing, time, length, playable, shuffled, repeat,
+      toggle, toggleShuffle, toggleRepeat, playSong, playAll,
       next: () => step(1), prev: () => step(-1), seekTo,
     }),
-    [queue, current, playing, time, length, playable, shuffled,
-     toggle, toggleShuffle, playSong, playAll, step, seekTo],
+    [queue, current, playing, time, length, playable, shuffled, repeat,
+     toggle, toggleShuffle, toggleRepeat, playSong, playAll, step, seekTo],
   );
 
   return (
@@ -243,7 +249,14 @@ export function PlayerProvider({
           if (current && e.currentTarget.currentTime < 1) countPlay(current.slug);
         }}
         onPause={() => setPlaying(false)}
-        onEnded={() => step(1)}
+        onEnded={(e) => {
+          const el = e.currentTarget;
+          el.currentTime = 0;
+          setTime(0);
+          // Rewound either way, so the play button starts it again rather than
+          // sitting at the end doing nothing.
+          if (repeat) void el.play().catch(() => setPlaying(false));
+        }}
       />
     </Ctx.Provider>
   );

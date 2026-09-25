@@ -3,13 +3,13 @@
 import { usePlayer } from "@/player/PlayerProvider";
 import { PlayControl } from "./PlayControl";
 import { SeekBar } from "./SeekBar";
-import { NextIcon, PrevIcon, ShuffleIcon } from "./Icons";
+import { NextIcon, PrevIcon, RepeatIcon, ShuffleIcon } from "./Icons";
 import type { Dict } from "@/lib/i18n";
 import type { Song } from "@/lib/types";
 
 /** The full player on a song page. Drives the same audio as the mini player. */
 export function SongTransport({ song, dict, title }: { song: Song; dict: Dict; title: string }) {
-  const { next, prev, shuffled, toggleShuffle } = usePlayer();
+  const { next, prev, shuffled, toggleShuffle, repeat, toggleRepeat } = usePlayer();
 
   return (
     <>
@@ -30,6 +30,15 @@ export function SongTransport({ song, dict, title }: { song: Song; dict: Dict; t
         <PlayControl song={song} dict={dict} title={title} variant="lg" glyph={25} />
         <button type="button" className="iconbtn iconbtn--strong" onClick={next} aria-label={dict.next}>
           <NextIcon size={25} className="flip" />
+        </button>
+        <button
+          type="button"
+          className={`iconbtn${repeat ? " iconbtn--on" : " iconbtn--quiet"}`}
+          onClick={toggleRepeat}
+          aria-pressed={repeat}
+          aria-label={dict.repeat}
+        >
+          <RepeatIcon size={19} />
         </button>
       </div>
       {!song.audioUrl && <p className="note">{dict.noAudio}</p>}

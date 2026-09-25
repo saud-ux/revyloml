@@ -359,7 +359,9 @@
 }
 .admin-row__actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .admin-row__actions .iconbtn { inline-size: 36px; block-size: 36px; }
-.iconbtn--on { color: var(--accent); }
+/* Hover is listed with two classes and would otherwise outrank this one, so an
+   active toggle lost its accent the moment a pointer rested on it. */
+.iconbtn--on, .iconbtn--on:hover { color: var(--accent); }
 .iconbtn--danger:hover { color: var(--danger); }
 .iconbtn[disabled] { opacity: 0.3; pointer-events: none; }
 
