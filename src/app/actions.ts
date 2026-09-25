@@ -147,9 +147,8 @@ export async function saveSong(_prev: FormState, form: FormData): Promise<FormSt
   redirect(`/${locale}/admin`);
 }
 
-export async function removeSong(form: FormData): Promise<void> {
+export async function removeSong(slug: string): Promise<void> {
   await requireAdmin();
-  const slug = String(form.get("slug") ?? "");
   const song = await deleteSong(slug);
   // Delete the files only after the row is gone, so a failure never leaves a
   // song pointing at audio that no longer exists.
@@ -158,16 +157,15 @@ export async function removeSong(form: FormData): Promise<void> {
   revalidatePath("/", "layout");
 }
 
-export async function toggleVisibility(form: FormData): Promise<void> {
+export async function toggleVisibility(slug: string, visibility: Visibility): Promise<void> {
   await requireAdmin();
-  const slug = String(form.get("slug") ?? "");
-  await setVisibility(slug, form.get("visibility") === "hidden" ? "hidden" : "public");
+  await setVisibility(slug, visibility === "hidden" ? "hidden" : "public");
   revalidatePath("/", "layout");
 }
 
-export async function togglePinned(form: FormData): Promise<void> {
+export async function togglePinned(slug: string, pinned: boolean): Promise<void> {
   await requireAdmin();
-  await setPinned(String(form.get("slug") ?? ""), form.get("pinned") === "true");
+  await setPinned(slug, pinned);
   revalidatePath("/", "layout");
 }
 

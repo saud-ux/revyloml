@@ -116,6 +116,48 @@ export function AdminSongList({
      
   }, [dragging]);
 
+  /**
+   * Every one of these moved the screen only after a round trip to Singapore
+   * and a re-render of the whole page, which on a phone is a second or more of
+   * a tap that appears to have done nothing. The list is the truth on screen
+   * now, and the server is told afterwards. Reordering already worked this way;
+   * these are the rest of the buttons catching up.
+   *
+   * On failure the change is put back, so the screen never keeps a state the
+   * database refused.
+   */
+  function optimistic(revert: Song[], run: () => Promise<void>) {
+    startTransition(async () => {
+      try {
+        await run();
+      } catch {
+        setOrder(revert);
+      }
+    });
+  }
+
+  function onPin(song: Song) {
+    const before = order;
+    const pinned = !song.pinned;
+    // At most one song is pinned, so the others give it up here too.
+    setOrder((cur) => cur.map((s) => ({ ...s, pinned: s.slug === song.slug && pinned })));
+    optimistic(before, () => togglePinned(song.slug, pinned));
+  }
+
+  function onVisibility(song: Song) {
+    const before = order;
+    const visibility = song.visibility === "hidden" ? "public" : "hidden";
+    setOrder((cur) => cur.map((s) => (s.slug === song.slug ? { ...s, visibility } : s)));
+    optimistic(before, () => toggleVisibility(song.slug, visibility));
+  }
+
+  function onRemove(song: Song) {
+    if (!confirm(dict.confirmDelete)) return;
+    const before = order;
+    setOrder((cur) => cur.filter((s) => s.slug !== song.slug));
+    optimistic(before, () => removeSong(song.slug));
+  }
+
   async function copyLink(slug: string) {
     const ok = await copyText(`${origin}/${locale}/s/${slug}`);
     if (!ok) return;
@@ -220,41 +262,24 @@ export function AdminSongList({
                   )}
                 </button>
 
-                <form action={togglePinned}>
-                  <input type="hidden" name="slug" value={song.slug} />
-                  <input
-                    type="hidden"
-                    name="pinned"
-                    value={String(!song.pinned)}
-                  />
-                  <button
-                    type="submit"
-                    className={`iconbtn${song.pinned ? " iconbtn--on" : ""}`}
-                    aria-label={`${song.pinned ? dict.unpin : dict.pin}: ${name}`}
-                  >
-                    <PinIcon />
-                  </button>
-                </form>
+                <button
+                  type="button"
+                  className={`iconbtn${song.pinned ? " iconbtn--on" : ""}`}
+                  onClick={() => onPin(song)}
+                  aria-pressed={song.pinned}
+                  aria-label={`${song.pinned ? dict.unpin : dict.pin}: ${name}`}
+                >
+                  <PinIcon />
+                </button>
 
-                <form action={toggleVisibility}>
-                  <input type="hidden" name="slug" value={song.slug} />
-                  <input
-                    type="hidden"
-                    name="visibility"
-                    value={song.visibility === "hidden" ? "public" : "hidden"}
-                  />
-                  <button
-                    type="submit"
-                    className="iconbtn"
-                    aria-label={`${song.visibility === "hidden" ? dict.show : dict.hide}: ${name}`}
-                  >
-                    {song.visibility === "hidden" ? (
-                      <EyeIcon />
-                    ) : (
-                      <EyeOffIcon />
-                    )}
-                  </button>
-                </form>
+                <button
+                  type="button"
+                  className="iconbtn"
+                  onClick={() => onVisibility(song)}
+                  aria-label={`${song.visibility === "hidden" ? dict.show : dict.hide}: ${name}`}
+                >
+                  {song.visibility === "hidden" ? <EyeIcon /> : <EyeOffIcon />}
+                </button>
 
                 <Link
                   href={`/${locale}/admin/songs/${song.slug}`}
@@ -264,21 +289,14 @@ export function AdminSongList({
                   <PencilIcon />
                 </Link>
 
-                <form
-                  action={removeSong}
-                  onSubmit={(e) => {
-                    if (!confirm(dict.confirmDelete)) e.preventDefault();
-                  }}
+                <button
+                  type="button"
+                  className="iconbtn iconbtn--danger"
+                  onClick={() => onRemove(song)}
+                  aria-label={`${dict.remove}: ${name}`}
                 >
-                  <input type="hidden" name="slug" value={song.slug} />
-                  <button
-                    type="submit"
-                    className="iconbtn iconbtn--danger"
-                    aria-label={`${dict.remove}: ${name}`}
-                  >
-                    <TrashIcon />
-                  </button>
-                </form>
+                  <TrashIcon />
+                </button>
               </span>
             </li>
           );
