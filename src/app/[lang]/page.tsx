@@ -10,7 +10,7 @@ import { LangToggle } from "@/components/LangToggle";
 import { NoteIcon, SortIcon } from "@/components/Icons";
 import { ShuffleButton } from "@/components/ShuffleButton";
 import Link from "next/link";
-import { duration, monthYear, playCount, songCount } from "@/lib/format";
+import { duration, playCount } from "@/lib/format";
 
 export default async function HomePage({
   params,
@@ -55,8 +55,6 @@ export default async function HomePage({
             <h1 className="profile__name">{profile.name[locale]}</h1>
             <span className="profile__sub">
               <span className="ltr">@{profile.handle}</span>
-              {" · "}
-              <span>{songCount(songs.length, locale)}</span>
             </span>
             {profile.bio[locale] && <p className="profile__bio">{profile.bio[locale]}</p>}
             <SocialLinks social={profile.social} />
@@ -82,10 +80,9 @@ export default async function HomePage({
                   <a href={`/${locale}/s/${featured.slug}`} style={{ flexGrow: 1, minWidth: 0 }}>
                     <span style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                       <span className="featured__title">{featured.title[locale]}</span>
-                      <span className="row__meta">
-                        {monthYear(featured.releasedAt, locale)}
-                        {featured.plays >= 5 && <> · {playCount(featured.plays, locale)}</>}
-                      </span>
+                      {featured.plays >= 5 && (
+                        <span className="row__meta">{playCount(featured.plays, locale)}</span>
+                      )}
                     </span>
                   </a>
                   <PlayControl song={featured} dict={dict} title={featured.title[locale]} glyph={20} />

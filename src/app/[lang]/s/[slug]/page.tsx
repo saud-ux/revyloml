@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProfile, getSong, listPublicSongs } from "@/lib/data";
 import { fill, isLocale, t, type Locale } from "@/lib/i18n";
-import { monthYear } from "@/lib/format";
 import { Cover } from "@/components/Cover";
 import { SongRow } from "@/components/SongRow";
 import { SongTransport } from "@/components/SongTransport";
@@ -24,7 +23,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!song) return { title: t(locale).notFoundTitle };
 
   const title = song.title[locale];
-  const description = `${profile.name[locale]} · ${monthYear(song.releasedAt, locale)}`;
+  const description = profile.name[locale];
   return {
     title,
     description,
@@ -67,9 +66,7 @@ export default async function SongPage({ params }: { params: Params }) {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 5, paddingBlockEnd: 16 }}>
               <h1 className="song-title">{song.title[locale]}</h1>
-              <p className="song-meta">
-                {profile.name[locale]} · {monthYear(song.releasedAt, locale)}
-              </p>
+              <p className="song-meta">{profile.name[locale]}</p>
             </div>
             <SongTransport song={song} dict={dict} title={song.title[locale]} />
           </div>
