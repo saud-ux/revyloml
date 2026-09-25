@@ -11,6 +11,7 @@
     "hash-password": "node scripts/hash-password.mjs"
   },
   "dependencies": {
+    "@breezystack/lamejs": "^1.2.7",
     "next": "^16.3.6",
     "pg": "^8.23.0",
     "react": "^19.3.0",

@@ -40,7 +40,7 @@ export function ProfileForm({
   const errorKey = error ? ERRORS[error] : undefined;
 
   const photoStatus =
-    photo.phase === "busy"
+    photo.phase === "working"
       ? fill(dict.uploading, { percent: photo.percent })
       : photo.phase === "error"
         ? dict.uploadRetry
@@ -71,7 +71,7 @@ export function ProfileForm({
             />
           </label>
           {photoStatus && <span className="dropzone__hint">{photoStatus}</span>}
-          {photo.phase === "busy" && <Bar percent={photo.percent} />}
+          {photo.phase === "working" && <Bar percent={photo.percent} />}
         </div>
       </div>
 
@@ -129,7 +129,7 @@ export function ProfileForm({
 
       <div className="form__actions">
         {/* Saving mid-upload would file the profile without its photo. */}
-        <button type="submit" className="btn btn--primary" disabled={pending || photo.phase === "busy"}>
+        <button type="submit" className="btn btn--primary" disabled={pending || photo.phase === "working"}>
           {pending ? dict.saving : dict.saveChanges}
         </button>
         <Link href={`/${locale}/admin`} className="btn btn--secondary">{dict.cancel}</Link>

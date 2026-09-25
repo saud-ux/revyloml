@@ -15,6 +15,9 @@ const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 const ERRORS: Record<string, keyof Dict> = {
   title: "errTitle",
+  "audio-decode": "errAudioDecode",
+  "audio-empty": "errAudioEmpty",
+  "audio-toolong": "errAudioToolong",
   "audio-type": "errAudioType",
   "audio-size": "errAudioSize",
   "cover-type": "errImageType",
@@ -33,14 +36,19 @@ export function SongForm({
   const [state, action, pending] = useActionState(saveSong, undefined);
   const [audio, takeAudio] = useUpload("audio", "audio");
   const [cover, takeCover] = useUpload("image", "cover");
-  const [seconds, setSeconds] = useState(song?.duration ?? 0);
+  const [probed, setProbed] = useState(song?.duration ?? 0);
   const [titleAr, setTitleAr] = useState(song?.title.ar ?? "");
 
-  const busy = audio.phase === "busy" || cover.phase === "busy";
+  const busy = audio.phase === "working" || cover.phase === "working";
 
   /** What the picker says under itself once a file has been chosen. */
   function status(slot: Slot): string | null {
-    if (slot.phase === "busy") return fill(dict.uploading, { percent: slot.percent });
+    if (slot.phase === "working") {
+      if (slot.stage === "reading") return dict.stageReading;
+      if (slot.stage === "extracting") return dict.stageExtracting;
+      if (slot.stage === "converting") return fill(dict.stageConverting, { percent: slot.percent });
+      return fill(dict.uploading, { percent: slot.percent });
+    }
     if (slot.phase === "error") return dict.uploadRetry;
     if (slot.name) return `${slot.name} · ${mb(slot.bytes)}`;
     return null;
@@ -48,18 +56,20 @@ export function SongForm({
 
   /**
    * Read the track length in the browser rather than probing the file on the
-   * server — no ffmpeg in the deployment, and the browser already decoded it.
+   * server — no ffmpeg in the deployment, and the browser is about to decode the
+   * whole thing anyway. A file passed through untouched is never decoded, so it
+   * still needs the cheap metadata probe.
    */
   function onAudio(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Read the length before handing the input over: the upload clears it.
+    // Probe before handing the input over: the upload clears it.
     const url = URL.createObjectURL(file);
     const probe = new Audio();
     probe.preload = "metadata";
     probe.onloadedmetadata = () => {
       const d = Math.round(probe.duration);
-      if (Number.isFinite(d) && d > 0) setSeconds(d);
+      if (Number.isFinite(d) && d > 0) setProbed(d);
       URL.revokeObjectURL(url);
     };
     probe.onerror = () => URL.revokeObjectURL(url);
@@ -69,6 +79,9 @@ export function SongForm({
 
   // An upload that failed in the browser reports the same codes the action
   // does, so both end up in the same sentence under the form.
+  // The converter decoded the whole file, so its length beats the probe's.
+  const seconds = audio.seconds > 0 ? audio.seconds : probed;
+
   const error = audio.error ?? cover.error ?? state?.error;
   const errorKey = error ? ERRORS[error] : undefined;
 
@@ -87,7 +100,13 @@ export function SongForm({
         <span className="dropzone__icon"><NoteIcon size={24} /></span>
         <label className="btn btn--secondary">
           {dict.dropzone}
-          <input type="file" name="audio" accept="audio/*" className="sr-only" onChange={onAudio} />
+          <input
+            type="file"
+            name="audio"
+            accept="audio/*,video/*"
+            className="sr-only"
+            onChange={onAudio}
+          />
         </label>
         <span className="dropzone__hint">
           {audio.name
@@ -96,12 +115,14 @@ export function SongForm({
               ? fmtDuration(seconds)
               : dict.formats}
         </span>
-        {audio.phase === "busy" && <Bar percent={audio.percent} />}
-        {/* Nothing re-encodes the upload, so the file Yazan picks is the file
-            every listener downloads. A WAV is a slow page on mobile data. */}
+        {audio.phase === "working" && <Bar percent={audio.percent} />}
         {!audio.name && <span className="dropzone__hint">{dict.formatsHint}</span>}
-        {audio.bytes > 12 * 1024 * 1024 && (
-          <span className="dropzone__warn">{dict.formatsHint}</span>
+        {/* Worth saying out loud: a 400 MB clip becoming 7 MB looks like the
+            upload went wrong otherwise. */}
+        {audio.converted && audio.phase === "done" && (
+          <span className="dropzone__hint">
+            {fill(dict.convertedNote, { from: mb(audio.bytes), to: mb(audio.sent) })}
+          </span>
         )}
       </div>
 
@@ -143,7 +164,7 @@ export function SongForm({
                 onChange={(e) => void takeCover(e.target)}
               />
             </label>
-            {cover.phase === "busy" && <Bar percent={cover.percent} />}
+            {cover.phase === "working" && <Bar percent={cover.percent} />}
           </div>
         </div>
       </div>
@@ -175,8 +196,14 @@ export function SongForm({
       )}
 
       <div className="form__actions">
-        {/* Saving mid-upload would file the song without its audio. */}
-        <button type="submit" className="btn btn--primary" disabled={pending || busy}>
+        {/* Saving mid-upload would file the song without its audio, and saving
+            after a failed conversion would create one that can never play. A
+            song that already has audio is still editable: the old file stands. */}
+        <button
+          type="submit"
+          className="btn btn--primary"
+          disabled={pending || busy || (audio.phase === "error" && !song?.audioUrl)}
+        >
           {pending ? dict.saving : song ? dict.saveChanges : dict.save}
         </button>
         <Link href={`/${locale}/admin`} className="btn btn--secondary">{dict.cancel}</Link>
