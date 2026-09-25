@@ -20,9 +20,14 @@ import { looksLikeMp4, remuxToAudio } from "./remuxAudio";
  * resort, for the formats neither of those covers.
  */
 
-const PASSTHROUGH = new Set([
-  "audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/aac", "audio/ogg",
-]);
+/**
+ * Compressed audio that is not in an MP4 container. These go up untouched and
+ * the browser reads their length itself, which it can do for these formats
+ * without help. Anything in an MP4 container, .m4a included, takes the remux
+ * path instead: it is just as lossless, it normalises the container, and it
+ * yields an exact length without needing a decoder at all.
+ */
+const PASSTHROUGH = new Set(["audio/mpeg", "audio/mp3", "audio/ogg", "audio/wav"]);
 
 const RATE = 44100;
 /** Transparent enough for streaming at about 1.4 MB a minute. */
@@ -62,8 +67,10 @@ export async function prepareAudio(
   file: File,
   onStage: (stage: Stage, percent: number) => void,
 ): Promise<Prepared> {
-  // Already compressed audio of a sensible size: send it untouched.
-  if (PASSTHROUGH.has(file.type) && file.size <= MAX_BYTES) {
+  // A WAV is only ever passed through if it is small; it is the one format here
+  // that is worth re-encoding, being roughly ten times the size of anything else.
+  const passable = PASSTHROUGH.has(file.type) && file.type !== "audio/wav";
+  if (passable && file.size <= MAX_BYTES) {
     return { ok: true, file, seconds: 0, converted: false };
   }
 
@@ -72,12 +79,18 @@ export async function prepareAudio(
 
   onStage("extracting", 0);
 
-  // An MP4 or MOV: lift the audio track out whole. No decoder, no quality lost,
-  // and a phone video collapses to a few per cent of its size.
+  // An MP4, MOV or M4A: lift the audio track out whole. No decoder, no quality
+  // lost, and a phone video collapses to a few per cent of its size.
   if (looksLikeMp4(bytes.slice(0, 12))) {
     const lifted = await remuxToAudio(file, bytes);
     if (lifted.ok && lifted.file.size <= MAX_BYTES) {
-      return { ok: true, file: lifted.file, seconds: lifted.seconds, converted: true };
+      return {
+        ok: true,
+        file: lifted.file,
+        seconds: lifted.seconds,
+        // Only worth reporting as a conversion when it actually saved something.
+        converted: lifted.file.size < file.size * 0.9,
+      };
     }
   }
 
