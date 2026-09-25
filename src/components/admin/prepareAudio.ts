@@ -1,6 +1,7 @@
 "use client";
 
 import { Mp3Encoder } from "@breezystack/lamejs";
+import { looksLikeMp4, remuxToAudio } from "./remuxAudio";
 
 /**
  * Turns whatever Yazan picked into something small enough to upload and small
@@ -12,8 +13,11 @@ import { Mp3Encoder } from "@breezystack/lamejs";
  * megabytes. So the phone pulls it out and encodes an MP3 before anything is
  * uploaded, and the video is discarded.
  *
- * A file that is already compressed audio is left exactly as it is. Re-encoding
- * it would cost quality for nothing.
+ * A file that is already compressed audio is left exactly as it is, and an MP4
+ * or MOV gets its audio track copied out rather than decoded, which is both
+ * lossless and the only route that works on Safari — it will not hand a video
+ * container to decodeAudioData at all. Decoding and re-encoding is the last
+ * resort, for the formats neither of those covers.
  */
 
 const PASSTHROUGH = new Set([
@@ -28,6 +32,8 @@ const BLOCKS_PER_TICK = 80;      // then yield, so the progress bar can repaint
 const MAX_MINUTES = 60;
 
 export type Stage = "reading" | "extracting" | "converting";
+
+const MAX_BYTES = 50 * 1024 * 1024;
 export type Prepared =
   | { ok: true; file: File; seconds: number; converted: boolean }
   | { ok: false; error: "decode" | "empty" | "toolong" };
@@ -57,7 +63,7 @@ export async function prepareAudio(
   onStage: (stage: Stage, percent: number) => void,
 ): Promise<Prepared> {
   // Already compressed audio of a sensible size: send it untouched.
-  if (PASSTHROUGH.has(file.type) && file.size <= 50 * 1024 * 1024) {
+  if (PASSTHROUGH.has(file.type) && file.size <= MAX_BYTES) {
     return { ok: true, file, seconds: 0, converted: false };
   }
 
@@ -65,6 +71,16 @@ export async function prepareAudio(
   const bytes = await file.arrayBuffer();
 
   onStage("extracting", 0);
+
+  // An MP4 or MOV: lift the audio track out whole. No decoder, no quality lost,
+  // and a phone video collapses to a few per cent of its size.
+  if (looksLikeMp4(bytes.slice(0, 12))) {
+    const lifted = await remuxToAudio(file, bytes);
+    if (lifted.ok && lifted.file.size <= MAX_BYTES) {
+      return { ok: true, file: lifted.file, seconds: lifted.seconds, converted: true };
+    }
+  }
+
   let audio: AudioBuffer;
   try {
     // An offline context resamples to its own rate while decoding, so the
