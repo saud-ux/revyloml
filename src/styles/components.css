@@ -64,13 +64,23 @@
   border-radius: var(--r-cover); display: grid; place-items: center;
 }
 .cover__letter { font-weight: 700; color: rgb(255 255 255 / 0.1); line-height: 1; user-select: none; }
-.cover img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+
+/* Positioned rather than laid out. As a grid item the image ignored its 100%
+   height, kept its own proportions, overflowed the square and was clipped from
+   the bottom, so a tall photo showed only its top strip and object-fit never
+   came into it. Taking it out of the grid gives it the square to fill, and the
+   crop is centred as intended. */
+.cover img, .avatar img {
+  position: absolute; inset: 0;
+  inline-size: 100%; block-size: 100%;
+  object-fit: cover;
+}
 
 .avatar {
+  position: relative;
   border-radius: 50%; background: var(--accent); color: var(--on-accent);
   display: grid; place-items: center; font-weight: 700; flex-shrink: 0; overflow: hidden;
 }
-.avatar img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 
 /* ---------------------------------------------------------------- rows */
 .row {
